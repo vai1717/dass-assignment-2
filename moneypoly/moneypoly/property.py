@@ -62,6 +62,7 @@ class Property:
 
 
 class PropertyGroup:
+    """Represents a group of properties of the same color in MoneyPoly."""
     def __init__(self, name, color):
         self.name = name
         self.color = color
