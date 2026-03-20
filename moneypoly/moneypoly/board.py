@@ -1,6 +1,10 @@
-# Board module for MoneyPoly: defines the board layout, special tiles, and property lookup functions.
-from moneypoly.property import Property, PropertyGroup
-from moneypoly.config import (
+
+"""
+Board module for MoneyPoly: defines the board layout, special tiles, and property
+lookup functions.
+"""
+from .property import Property, PropertyGroup
+from .config import (
     JAIL_POSITION,
     GO_TO_JAIL_POSITION,
     FREE_PARKING_POSITION,
@@ -106,7 +110,7 @@ class Board:
         prop = self.get_property_at(position)
         if prop is None:
             return False
-        if prop.is_mortgaged == True:
+        if prop.is_mortgaged:
             return False
         return prop.owner is None
 

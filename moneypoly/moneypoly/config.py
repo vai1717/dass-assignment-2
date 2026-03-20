@@ -1,3 +1,6 @@
+"""
+Configuration constants for MoneyPoly game.
+"""
 # Configuration constants for MoneyPoly game.
 STARTING_BALANCE = 1500
 GO_SALARY = 200

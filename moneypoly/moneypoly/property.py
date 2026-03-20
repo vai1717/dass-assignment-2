@@ -1,3 +1,6 @@
+"""
+Property module for MoneyPoly: defines the Property class and related logic.
+"""
 # Property module for MoneyPoly: defines the Property class and related logic.
 class Property:
     """Represents a single purchasable property tile on the MoneyPoly board."""
