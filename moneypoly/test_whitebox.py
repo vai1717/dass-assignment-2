@@ -1,9 +1,9 @@
 import pytest
-from moneypoly.moneypoly.player import Player
-from moneypoly.moneypoly.property import Property
-from moneypoly.moneypoly.game import Game
-from moneypoly.moneypoly.board import Board
-from moneypoly.moneypoly.bank import Bank
+from moneypoly.player import Player
+from moneypoly.property import Property
+from moneypoly.game import Game
+from moneypoly.board import Board
+from moneypoly.bank import Bank
 
 # Test 1: Player cannot buy property if balance is insufficient
 def test_player_cannot_buy_property_if_insufficient_balance():
