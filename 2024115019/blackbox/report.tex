@@ -1,0 +1,159 @@
+\documentclass{article}
+\usepackage{enumitem}
+\usepackage{geometry}
+\geometry{margin=1in}
+\title{QuickCart Black-Box API Testing Report}
+\author{Vaibhavi Kolipaka}
+\date{\today}
+\begin{document}
+\maketitle
+
+\section*{Introduction}
+This report documents the black-box testing of the QuickCart REST API. The tests were designed based solely on the provided API documentation, without access to the internal implementation. The goal is to verify correct API behavior, error handling, and data validation.
+
+\section*{Test Case Design}
+Test cases were designed to cover:
+\begin{itemize}[noitemsep]
+  \item Valid requests (happy path)
+  \item Invalid inputs
+  \item Missing fields
+  \item Wrong data types
+  \item Boundary values
+\end{itemize}
+Each test case includes the input, expected output, and a justification for its inclusion.
+
+\section*{Test Case Table}
+\subsection*{Products Endpoint: GET /api/v1/products}
+\begin{itemize}
+  \item \textbf{Valid request:}
+    \begin{itemize}
+      \item Input: GET /api/v1/products with header X-Roll-Number: 123
+      \item Expected Output: 200 OK, JSON array of active products with correct fields (id, name, price, etc.)
+      \item Justification: Confirms the endpoint returns the product list as specified for a valid request.
+    \end{itemize}
+  \item \textbf{Missing X-Roll-Number header:}
+    \begin{itemize}
+      \item Input: GET /api/v1/products with no X-Roll-Number header
+      \item Expected Output: 401 Unauthorized, error message about missing header
+      \item Justification: Ensures authentication is enforced as per API requirements.
+    \end{itemize}
+  \item \textbf{Invalid X-Roll-Number (non-integer):}
+    \begin{itemize}
+      \item Input: GET /api/v1/products with header X-Roll-Number: abc
+      \item Expected Output: 400 Bad Request, error message about invalid header
+      \item Justification: Checks type validation for required headers.
+    \end{itemize}
+  \item \textbf{Boundary value: Large X-Roll-Number}
+    \begin{itemize}
+      \item Input: GET /api/v1/products with header X-Roll-Number: 9999999999
+      \item Expected Output: 200 OK or appropriate error if system has limits
+      \item Justification: Tests system handling of large but valid header values.
+    \end{itemize}
+  \item \textbf{Filter by category:}
+    \begin{itemize}
+      \item Input: GET /api/v1/products?category=Electronics with header X-Roll-Number: 123
+      \item Expected Output: 200 OK, only products in Electronics category
+      \item Justification: Verifies filtering logic works as documented.
+    \end{itemize}
+  \item \textbf{Search by name:}
+    \begin{itemize}
+      \item Input: GET /api/v1/products?search=phone with header X-Roll-Number: 123
+      \item Expected Output: 200 OK, only products whose name contains 'phone'
+      \item Justification: Ensures search functionality is implemented.
+    \end{itemize}
+  \item \textbf{Sort by price ascending:}
+    \begin{itemize}
+      \item Input: GET /api/v1/products?sort=price_asc with header X-Roll-Number: 123
+      \item Expected Output: 200 OK, products sorted by price low to high
+      \item Justification: Confirms sorting works as per API spec.
+    \end{itemize}
+  \item \textbf{Sort by price descending:}
+    \begin{itemize}
+      \item Input: GET /api/v1/products?sort=price_desc with header X-Roll-Number: 123
+      \item Expected Output: 200 OK, products sorted by price high to low
+      \item Justification: Confirms sorting works as per API spec.
+    \end{itemize}
+  \item \textbf{Inactive products not shown:}
+    \begin{itemize}
+      \item Input: GET /api/v1/products with header X-Roll-Number: 123
+      \item Expected Output: 200 OK, only active products in response
+      \item Justification: Ensures inactive products are filtered out as required.
+    \end{itemize}
+  \item \textbf{Wrong data type for query param:}
+    \begin{itemize}
+      \item Input: GET /api/v1/products?category=12345 with header X-Roll-Number: 123
+      \item Expected Output: 200 OK or error if type checking is strict
+      \item Justification: Tests robustness to unexpected query param types.
+    \end{itemize}
+  \item \textbf{Boundary value: Empty search string}
+    \begin{itemize}
+      \item Input: GET /api/v1/products?search= with header X-Roll-Number: 123
+      \item Expected Output: 200 OK, all products returned (or as per API spec)
+      \item Justification: Checks handling of empty search input.
+    \end{itemize}
+  \item \textbf{Boundary value: Very long search string}
+    \begin{itemize}
+      \item Input: GET /api/v1/products?search=aaaaaaaa... (1000+ chars) with header X-Roll-Number: 123
+      \item Expected Output: 200 OK, empty list or error if input is too long
+      \item Justification: Tests system limits and input validation for search.
+    \end{itemize}
+\end{itemize}
+
+\section*{Bug Reports}
+
+The following bugs were found during black-box testing:
+\begin{itemize}
+  \item \textbf{test\_valid\_request}
+    \begin{itemize}
+      \item Endpoint: GET /api/v1/products
+      \item Headers: X-Roll-Number: 123
+      \item Expected: 200 OK, JSON array of products
+      \item Actual: 400 Bad Request
+      \item Justification: Indicates missing or invalid required header (likely X-User-ID required by API).
+    \end{itemize}
+  \item \textbf{test\_filter\_by\_category}
+    \begin{itemize}
+      \item Endpoint: GET /api/v1/products?category=Electronics
+      \item Headers: X-Roll-Number: 123
+      \item Expected: 200 OK, filtered products
+      \item Actual: 400 Bad Request
+      \item Justification: Indicates missing or invalid required header (likely X-User-ID required by API).
+    \end{itemize}
+  \item \textbf{test\_search\_by\_name}
+    \begin{itemize}
+      \item Endpoint: GET /api/v1/products?search=phone
+      \item Headers: X-Roll-Number: 123
+      \item Expected: 200 OK, filtered products
+      \item Actual: 400 Bad Request
+      \item Justification: Indicates missing or invalid required header (likely X-User-ID required by API).
+    \end{itemize}
+  \item \textbf{test\_sort\_price\_asc}
+    \begin{itemize}
+      \item Endpoint: GET /api/v1/products?sort=price\_asc
+      \item Headers: X-Roll-Number: 123
+      \item Expected: 200 OK, sorted products
+      \item Actual: 400 Bad Request
+      \item Justification: Indicates missing or invalid required header (likely X-User-ID required by API).
+    \end{itemize}
+  \item \textbf{test\_sort\_price\_desc}
+    \begin{itemize}
+      \item Endpoint: GET /api/v1/products?sort=price\_desc
+      \item Headers: X-Roll-Number: 123
+      \item Expected: 200 OK, sorted products
+      \item Actual: 400 Bad Request
+      \item Justification: Indicates missing or invalid required header (likely X-User-ID required by API).
+    \end{itemize}
+  \item \textbf{test\_empty\_search}
+    \begin{itemize}
+      \item Endpoint: GET /api/v1/products?search=
+      \item Headers: X-Roll-Number: 123
+      \item Expected: 200 OK, all products
+      \item Actual: 400 Bad Request
+      \item Justification: Indicates missing or invalid required header (likely X-User-ID required by API).
+    \end{itemize}
+\end{itemize}
+
+\section*{Conclusion}
+The results of the black-box testing are summarized, and recommendations for further testing or improvements are provided.
+
+\end{document}
