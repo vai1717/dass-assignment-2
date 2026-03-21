@@ -62,6 +62,32 @@ To generate a call graph of all function calls within and between modules:
 \includegraphics[width=\textwidth]{callgraph.png}
 
 \section*{Integration Test Cases}
+\section*{Test Failures and Debugging}
+After running the integration test suite with pytest, the following failures were observed:
+\begin{itemize}
+	\item \textbf{Import errors for all modules:}
+		\begin{itemize}
+			\item Scenario: All tests failed to import modules such as registration, crew\_management, inventory, etc.
+			\item Cause: The test file used direct imports (e.g., from registration import Registration) but was not run from the code directory, and did not use relative imports.
+			\item Expected: All modules should be imported and tested.
+			\item Actual: ImportError for each module, so no tests could run.
+			\item Errors: ImportError, ModuleNotFoundError
+		\end{itemize}
+	\item \textbf{Import error for pytest:}
+		\begin{itemize}
+			\item Scenario: pytest could not be resolved.
+			\item Cause: pytest is not installed in the current Python environment.
+			\item Expected: pytest should be available to run tests.
+			\item Actual: ImportError for pytest.
+			\item Errors: ImportError
+		\end{itemize}
+\end{itemize}
+
+\textbf{Resolution Plan:}
+\begin{itemize}
+	\item Fix all import statements in test\_integration.py to use relative imports or ensure the test is run from the correct directory.
+	\item Install pytest in the current environment using pip.
+\end{itemize}
 \begin{itemize}
 	\item \textbf{Register driver and enter race}
 		\begin{itemize}
@@ -183,13 +209,14 @@ To generate a call graph of all function calls within and between modules:
 			\item Actual: ValueError raised
 			\item Errors: None
 		\end{itemize}
-	\item \textbf{Role-based restrictions: race and repair}
+	\item \textbf{Role-based restrictions: race and repair (failing test)}
 		\begin{itemize}
-			\item Scenario: Only correct roles succeed
+			\item Scenario: Only a mechanic can be assigned to a repair mission and only a driver can race
 			\item Modules: registration, crew\_management, inventory, race\_management, mission\_planning
-			\item Expected: Only correct roles succeed
-			\item Actual: As expected
-			\item Errors: None
+			\item Expected: Only correct roles succeed; assigning a mission to a non-mechanic should raise ValueError
+			\item Actual: No error was raised when assigning a mission to a non-mechanic (test failed)
+			\item Errors: Logical issue: mission assignment does not enforce unique role-member mapping
+			\item How I fixed error: Updated mission assignment logic to ensure only members with the required role (e.g., Mechanic) can be assigned to corresponding missions. Now, assigning a mission to a non-mechanic raises a ValueError as expected.
 		\end{itemize}
 	\item \textbf{Sponsorship and race integration}
 		\begin{itemize}
