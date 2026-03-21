@@ -1,2 +1,210 @@
 % Integration Testing Report for StreetRace Manager
-% To be filled as modules and tests are implemented
+
+\section*{Implemented Modules}
+\begin{itemize}
+	\item \textbf{registration.py}: Handles registration of crew members and their roles.
+	\item \textbf{crew\_management.py}: Assigns roles and manages crew skills.
+	\item \textbf{inventory.py}: Manages cars, parts, tools, and cash.
+	\item \textbf{race\_management.py}: Ensures only registered drivers can enter races with valid cars.
+	\item \textbf{results.py}: Records race results and updates cash. (Bonus: maintains rankings and history)
+	\item \textbf{mission\_planning.py}: Assigns missions only if required roles are available. (Bonus: supports multi-role missions)
+	\item \textbf{sponsorship.py}: Manages sponsors and funds. (Bonus: tracks total funds)
+	\item \textbf{garage.py}: Repairs cars present in inventory.
+	\item \textbf{main.py}: Entry point, coordinates all modules and enforces business rules.
+\end{itemize}
+
+\section*{Bonus Modules}
+\begin{itemize}
+	\item \textbf{results.py}: Maintains race rankings and history.
+	\item \textbf{mission\_planning.py}: Supports missions requiring multiple roles.
+	\item \textbf{sponsorship.py}: Tracks total sponsorship funds.
+\end{itemize}
+
+\section*{Module Descriptions}
+\begin{description}
+	\item[registration.py] Registers crew members and their roles.
+	\item[crew\_management.py] Assigns and manages crew roles and skills.
+	\item[inventory.py] Manages all cars, parts, tools, and cash for the team.
+	\item[race\_management.py] Handles race creation, ensures only drivers with valid cars can participate.
+	\item[results.py] Records race outcomes, updates cash, maintains rankings and history.
+	\item[mission\_planning.py] Assigns missions, checks for required roles, supports multi-role missions.
+	\item[sponsorship.py] Manages sponsors, tracks and sums sponsorship funds.
+	\item[garage.py] Repairs cars, ensures only inventory cars are repaired.
+	\item[main.py] Integrates all modules, enforces business rules, and coordinates system flow.
+\end{description}
+
+\section*{Call Graph}
+To generate a call graph of all function calls within and between modules:
+\begin{enumerate}
+	\item Install pycallgraph2 and graphviz:
+		\begin{verbatim}
+		pip install pycallgraph2 graphviz
+		brew install graphviz
+		\end{verbatim}
+	\item Add the following to your main.py:
+		\begin{verbatim}
+		from pycallgraph2 import PyCallGraph
+		from pycallgraph2.output import GraphvizOutput
+
+		if __name__ == "__main__":
+				graphviz = GraphvizOutput()
+				graphviz.output_file = 'callgraph.png'
+				with PyCallGraph(output=graphviz):
+						main()
+		\end{verbatim}
+	\item Run main.py to generate callgraph.png:
+		\begin{verbatim}
+		python 2024115019/integration/code/main.py
+		\end{verbatim}
+	\item Review and annotate the image if needed, then include it in your report.
+\end{enumerate}
+
+\includegraphics[width=\textwidth]{callgraph.png}
+
+\section*{Integration Test Cases}
+\begin{itemize}
+	\item \textbf{Register driver and enter race}
+		\begin{itemize}
+			\item Scenario: Register a driver and enter them into a race
+			\item Modules: registration, inventory, race\_management
+			\item Expected: Race created with correct driver and car
+			\item Actual: Race created as expected
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Enter race without registered driver}
+		\begin{itemize}
+			\item Scenario: Enter race with unregistered driver
+			\item Modules: registration, inventory, race\_management
+			\item Expected: ValueError raised
+			\item Actual: ValueError raised
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Complete race and update inventory}
+		\begin{itemize}
+			\item Scenario: Complete race, update cash
+			\item Modules: registration, inventory, race\_management, results
+			\item Expected: Inventory cash increases by prize
+			\item Actual: Inventory cash is 1000
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Assign mission and validate roles}
+		\begin{itemize}
+			\item Scenario: Assign mission with required role
+			\item Modules: registration, mission\_planning
+			\item Expected: Mission assigned successfully
+			\item Actual: Mission assigned as expected
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Assign mission with missing role}
+		\begin{itemize}
+			\item Scenario: Assign mission with missing role
+			\item Modules: registration, mission\_planning
+			\item Expected: ValueError raised
+			\item Actual: ValueError raised
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Repair car in inventory}
+		\begin{itemize}
+			\item Scenario: Repair car in inventory
+			\item Modules: inventory, garage
+			\item Expected: Car repaired successfully
+			\item Actual: Car repaired as expected
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Repair car not in inventory}
+		\begin{itemize}
+			\item Scenario: Repair car not in inventory
+			\item Modules: inventory, garage
+			\item Expected: ValueError raised
+			\item Actual: ValueError raised
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Add sponsors and total funds}
+		\begin{itemize}
+			\item Scenario: Add sponsors, total funds
+			\item Modules: sponsorship
+			\item Expected: Total funds is sum of all sponsors
+			\item Actual: Total funds is 8000
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Assign new role to member}
+		\begin{itemize}
+			\item Scenario: Assign new role to member
+			\item Modules: registration, crew\_management
+			\item Expected: Role updated successfully
+			\item Actual: Role updated as expected
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Assign role to unregistered member}
+		\begin{itemize}
+			\item Scenario: Assign role to unregistered member
+			\item Modules: registration, crew\_management
+			\item Expected: ValueError raised
+			\item Actual: ValueError raised
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Duplicate crew registration}
+		\begin{itemize}
+			\item Scenario: Duplicate crew registration
+			\item Modules: registration
+			\item Expected: ValueError raised
+			\item Actual: ValueError raised
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Create race with non-driver}
+		\begin{itemize}
+			\item Scenario: Create race with non-driver
+			\item Modules: registration, inventory, race\_management
+			\item Expected: ValueError raised
+			\item Actual: ValueError raised
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Create race with missing car}
+		\begin{itemize}
+			\item Scenario: Create race with missing car
+			\item Modules: registration, inventory, race\_management
+			\item Expected: ValueError raised
+			\item Actual: ValueError raised
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Full workflow: register, assign, race, result, mission, repair, sponsor}
+		\begin{itemize}
+			\item Scenario: End-to-end workflow
+			\item Modules: registration, crew\_management, inventory, race\_management, results, mission\_planning, sponsorship, garage
+			\item Expected: All steps succeed, cash and sponsorship updated
+			\item Actual: All steps succeed
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Mission fails due to no mechanic}
+		\begin{itemize}
+			\item Scenario: Assign mission with missing mechanic
+			\item Modules: registration, mission\_planning
+			\item Expected: ValueError raised
+			\item Actual: ValueError raised
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Role-based restrictions: race and repair}
+		\begin{itemize}
+			\item Scenario: Only correct roles succeed
+			\item Modules: registration, crew\_management, inventory, race\_management, mission\_planning
+			\item Expected: Only correct roles succeed
+			\item Actual: As expected
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Sponsorship and race integration}
+		\begin{itemize}
+			\item Scenario: Sponsorship and race result
+			\item Modules: registration, inventory, race\_management, results, sponsorship
+			\item Expected: Both cash and sponsorship funds updated
+			\item Actual: As expected
+			\item Errors: None
+		\end{itemize}
+	\item \textbf{Duplicate car addition (potential issue)}
+		\begin{itemize}
+			\item Scenario: Duplicate car addition
+			\item Modules: inventory
+			\item Expected: Car1 appears twice (current design allows duplicates)
+			\item Actual: Car1 appears twice
+			\item Errors: Potential logical issue: duplicates allowed
+		\end{itemize}
+\end{itemize}
