@@ -22,7 +22,7 @@ def main():
     inventory = Inventory()
     race = RaceManagement(crew, inventory)
     results = Results(inventory)
-    missions = MissionPlanning(crew, garage=None)  # Garage to be injected if needed
+    missions = MissionPlanning(registration)
     sponsorship = Sponsorship()
     garage = Garage()
 
