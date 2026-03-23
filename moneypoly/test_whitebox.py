@@ -96,3 +96,60 @@ def test_trade_property_not_owned():
     game = Game([seller.name, buyer.name])
     result = game.trade(seller, buyer, prop, 50)
     assert result is False
+
+# Test 10: Player cannot unmortgage property without enough funds
+def test_unmortgage_property_insufficient_funds():
+    player = Player("Test", balance=10)
+    prop = Property("TestProp", 1, 100, 10)
+    prop.owner = player
+    prop.is_mortgaged = True
+    player.add_property(prop)
+    game = Game([player.name])
+    result = game.unmortgage_property(player, prop)
+    assert result is False
+    assert prop.is_mortgaged is True
+
+# Test 11: Player receives Get Out of Jail Free card from card action
+def test_get_out_of_jail_free_card():
+    player = Player("Test")
+    game = Game([player.name])
+    card = {"description": "Get Out of Jail Free.", "action": "jail_free", "value": 0}
+    game._apply_card(player, card)
+    assert player.get_out_of_jail_cards == 1
+
+# Test 12: Player pays tax when landing on income tax tile
+def test_income_tax_payment():
+    player = Player("Test")
+    game = Game([player.name])
+    player.position = 4  # INCOME_TAX_POSITION
+    balance_before = player.balance
+    game._move_and_resolve(player, 0)
+    assert player.balance == balance_before - 200
+
+# Test 13: Player goes to jail when landing on Go To Jail tile
+def test_go_to_jail_tile():
+    player = Player("Test")
+    game = Game([player.name])
+    player.position = 30  # GO_TO_JAIL_POSITION
+    game._move_and_resolve(player, 0)
+    assert player.in_jail is True
+
+# Test 14: Player cannot mortgage property they do not own
+def test_mortgage_property_not_owner():
+    player = Player("A")
+    other = Player("B")
+    prop = Property("TestProp", 1, 100, 10)
+    prop.owner = other
+    game = Game([player.name, other.name])
+    result = game.mortgage_property(player, prop)
+    assert result is False
+
+# Test 15: Player cannot buy property if already owned
+def test_buy_property_already_owned():
+    player = Player("A")
+    other = Player("B")
+    prop = Property("TestProp", 1, 100, 10)
+    prop.owner = other
+    game = Game([player.name, other.name])
+    result = game.buy_property(player, prop)
+    assert result is False

@@ -2,7 +2,12 @@
 """
 Main entry point for MoneyPoly game. Handles player input and game startup.
 """
+import pytest
+from moneypoly.player import Player
+from moneypoly.property import Property
 from moneypoly.game import Game
+from moneypoly.board import Board
+from moneypoly.bank import Bank
 
 
 def get_player_names():

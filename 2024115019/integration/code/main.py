@@ -5,6 +5,7 @@ Main entry point for the StreetRace Manager system.
 Handles high-level coordination and enforces business rules.
 """
 
+
 from registration import Registration
 from crew_management import CrewManagement
 from inventory import Inventory
@@ -17,35 +18,51 @@ from garage import Garage
 
 def main():
     # Initialize modules
+
     registration = Registration()
     crew = CrewManagement(registration)
     inventory = Inventory()
-    race = RaceManagement(crew, inventory)
+    race_management = RaceManagement(registration, inventory)
     results = Results(inventory)
     missions = MissionPlanning(registration)
     sponsorship = Sponsorship()
-    garage = Garage()
+    garage = Garage(inventory)
 
-    # Example: Register a crew member
-    member_id = registration.register_member("Alice")
-    crew.assign_role(member_id, "driver")
+    # Register crew members
+    registration.register_member("Alice", "driver")
+    registration.register_member("Bob", "mechanic")
 
-    # Example: Enter a race
-    if crew.is_driver(member_id):
-        race.enter_race(member_id, car_id=1)
+    # Assign skills
+    crew.set_skill("Alice", "driving", 5)
+    crew.set_skill("Bob", "repair", 5)
 
-    # Example: Race result updates inventory
-    results.update_after_race(race_id=1, winner_id=member_id)
+    # Add cars to inventory
+    inventory.add_car("Car1")
+    inventory.add_car("Car2")
 
-    # Example: Mission requiring mechanic
-    if crew.has_available_role("mechanic"):
-        missions.start_mission("Repair Car", required_role="mechanic")
+    # Create a race
+    race = race_management.create_race("Grand Prix", "Alice", "Car1")
 
-    # Example: Sponsorship
-    sponsorship.apply_for_sponsorship(team_id=1)
+    # Record race result
+    results.record_result(race, "Alice", 1000)
 
-    # Example: Garage
-    garage.repair_car(car_id=1)
+    # Assign a mission requiring a mechanic
+    missions.assign_mission("Repair Car1", ["mechanic"])
+
+    # Repair a car
+    garage.repair_car("Car1")
+
+    # Add a sponsor
+    sponsorship.add_sponsor("SpeedyOil", 5000)
 
 if __name__ == "__main__":
-    main()
+    # For call graph generation, wrap main in pycallgraph2 if available
+    try:
+        from pycallgraph2 import PyCallGraph
+        from pycallgraph2.output import GraphvizOutput
+        graphviz = GraphvizOutput()
+        graphviz.output_file = 'callgraph.png'
+        with PyCallGraph(output=graphviz):
+            main()
+    except ImportError:
+        main()

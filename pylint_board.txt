@@ -1,0 +1,2 @@
+************* Module moneypoly/moneypoly/board.py
+moneypoly/moneypoly/board.py:1:0: F0001: No module named moneypoly/moneypoly/board.py (fatal)

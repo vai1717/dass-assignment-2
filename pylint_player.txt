@@ -1,0 +1,2 @@
+************* Module moneypoly/moneypoly/player.py
+moneypoly/moneypoly/player.py:1:0: F0001: No module named moneypoly/moneypoly/player.py (fatal)

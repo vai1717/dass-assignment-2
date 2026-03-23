@@ -1,0 +1,2 @@
+************* Module moneypoly/moneypoly/ui.py
+moneypoly/moneypoly/ui.py:1:0: F0001: No module named moneypoly/moneypoly/ui.py (fatal)

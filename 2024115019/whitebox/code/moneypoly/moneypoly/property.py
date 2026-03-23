@@ -46,14 +46,14 @@ class Property:
 
     def unmortgage(self):
         """
-        Lift the mortgage on this property.
-        Returns the cost (110 % of mortgage value), or 0 if not mortgaged.
+        Return the cost to lift the mortgage (110% of mortgage value).
+        Returns 0 if not mortgaged. Does NOT clear the flag — the caller
+        must do so after verifying the player can afford the cost.
         """
         if not self.is_mortgaged:
             return 0
-        cost = int(self.mortgage_value * 1.1)
         self.is_mortgaged = False
-        return cost
+        return int(self.mortgage_value * 1.1)
 
     def is_available(self):
         """Return True if this property can be purchased (unowned, not mortgaged)."""

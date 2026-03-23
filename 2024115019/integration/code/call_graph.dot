@@ -1,0 +1,180 @@
+digraph G {
+    graph [rankdir=TB, ranksep=0.5, layout=dot, clusterrank="local"];
+    subgraph "cluster_G" {
+
+        graph [style="filled,rounded", fillcolor="#80808018", label=""];
+        "code" [label="code", style="filled", fillcolor="#ffffffb2", fontcolor="#000000", group="0"];
+        "code__crew_management" [label="code.crew_management", style="filled", fillcolor="#ffffffb2", fontcolor="#000000", group="1"];
+        "code__garage" [label="code.garage", style="filled", fillcolor="#ffffffb2", fontcolor="#000000", group="2"];
+        "code__inventory" [label="code.inventory", style="filled", fillcolor="#ffffffb2", fontcolor="#000000", group="3"];
+        "code__main" [label="code.main", style="filled", fillcolor="#ffffffb2", fontcolor="#000000", group="4"];
+        "code__mission_planning" [label="code.mission_planning", style="filled", fillcolor="#ffffffb2", fontcolor="#000000", group="5"];
+        "code__race_management" [label="code.race_management", style="filled", fillcolor="#ffffffb2", fontcolor="#000000", group="6"];
+        "code__registration" [label="code.registration", style="filled", fillcolor="#ffffffb2", fontcolor="#000000", group="7"];
+        "code__results" [label="code.results", style="filled", fillcolor="#ffffffb2", fontcolor="#000000", group="8"];
+        "code__sponsorship" [label="code.sponsorship", style="filled", fillcolor="#ffffffb2", fontcolor="#000000", group="9"];
+        subgraph "cluster_code__crew_management" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.crew_management"];
+            "code__crew_management__CrewManagement" [label="CrewManagement\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/crew_management.py:1)", style="filled", fillcolor="#ffd099b2", fontcolor="#000000", group="1"];
+        }
+        subgraph "cluster_code__crew_management__CrewManagement" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.crew_management.CrewManagement"];
+            "code__crew_management__CrewManagement____init__" [label="__init__\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/crew_management.py:2)", style="filled", fillcolor="#ffb965b2", fontcolor="#000000", group="1"];
+            "code__crew_management__CrewManagement__assign_role" [label="assign_role\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/crew_management.py:6)", style="filled", fillcolor="#ffb965b2", fontcolor="#000000", group="1"];
+            "code__crew_management__CrewManagement__get_skills" [label="get_skills\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/crew_management.py:17)", style="filled", fillcolor="#ffb965b2", fontcolor="#000000", group="1"];
+            "code__crew_management__CrewManagement__set_skill" [label="set_skill\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/crew_management.py:12)", style="filled", fillcolor="#ffb965b2", fontcolor="#000000", group="1"];
+        }
+        subgraph "cluster_code__garage" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.garage"];
+            "code__garage__Garage" [label="Garage\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/garage.py:1)", style="filled", fillcolor="#f5ff99b2", fontcolor="#000000", group="2"];
+        }
+        subgraph "cluster_code__garage__Garage" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.garage.Garage"];
+            "code__garage__Garage____init__" [label="__init__\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/garage.py:2)", style="filled", fillcolor="#f1ff65b2", fontcolor="#000000", group="2"];
+            "code__garage__Garage__repair_car" [label="repair_car\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/garage.py:6)", style="filled", fillcolor="#f1ff65b2", fontcolor="#000000", group="2"];
+        }
+        subgraph "cluster_code__inventory" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.inventory"];
+            "code__inventory__Inventory" [label="Inventory\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/inventory.py:1)", style="filled", fillcolor="#beff99b2", fontcolor="#000000", group="3"];
+        }
+        subgraph "cluster_code__inventory__Inventory" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.inventory.Inventory"];
+            "code__inventory__Inventory____init__" [label="__init__\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/inventory.py:2)", style="filled", fillcolor="#9dff65b2", fontcolor="#000000", group="3"];
+            "code__inventory__Inventory__add_car" [label="add_car\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/inventory.py:8)", style="filled", fillcolor="#9dff65b2", fontcolor="#000000", group="3"];
+            "code__inventory__Inventory__add_part" [label="add_part\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/inventory.py:11)", style="filled", fillcolor="#9dff65b2", fontcolor="#000000", group="3"];
+            "code__inventory__Inventory__add_tool" [label="add_tool\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/inventory.py:14)", style="filled", fillcolor="#9dff65b2", fontcolor="#000000", group="3"];
+            "code__inventory__Inventory__update_cash" [label="update_cash\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/inventory.py:17)", style="filled", fillcolor="#9dff65b2", fontcolor="#000000", group="3"];
+        }
+        subgraph "cluster_code__main" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.main"];
+            "code__main__main" [label="main\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/main.py:19)", style="filled", fillcolor="#99ffabb2", fontcolor="#000000", group="4"];
+        }
+        subgraph "cluster_code__mission_planning" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.mission_planning"];
+            "code__mission_planning__Mission" [label="Mission\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/mission_planning.py:1)", style="filled", fillcolor="#99ffe3b2", fontcolor="#000000", group="5"];
+            "code__mission_planning__MissionPlanning" [label="MissionPlanning\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/mission_planning.py:7)", style="filled", fillcolor="#99ffe3b2", fontcolor="#000000", group="5"];
+        }
+        subgraph "cluster_code__mission_planning__Mission" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.mission_planning.Mission"];
+            "code__mission_planning__Mission____init__" [label="__init__\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/mission_planning.py:2)", style="filled", fillcolor="#65ffd5b2", fontcolor="#000000", group="5"];
+        }
+        subgraph "cluster_code__mission_planning__MissionPlanning" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.mission_planning.MissionPlanning"];
+            "code__mission_planning__MissionPlanning____init__" [label="__init__\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/mission_planning.py:8)", style="filled", fillcolor="#65ffd5b2", fontcolor="#000000", group="5"];
+            "code__mission_planning__MissionPlanning__assign_mission" [label="assign_mission\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/mission_planning.py:12)", style="filled", fillcolor="#65ffd5b2", fontcolor="#000000", group="5"];
+        }
+        subgraph "cluster_code__race_management" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.race_management"];
+            "code__race_management__Race" [label="Race\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/race_management.py:1)", style="filled", fillcolor="#99e3ffb2", fontcolor="#000000", group="6"];
+            "code__race_management__RaceManagement" [label="RaceManagement\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/race_management.py:8)", style="filled", fillcolor="#99e3ffb2", fontcolor="#000000", group="6"];
+        }
+        subgraph "cluster_code__race_management__Race" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.race_management.Race"];
+            "code__race_management__Race____init__" [label="__init__\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/race_management.py:2)", style="filled", fillcolor="#65d5ffb2", fontcolor="#000000", group="6"];
+        }
+        subgraph "cluster_code__race_management__RaceManagement" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.race_management.RaceManagement"];
+            "code__race_management__RaceManagement____init__" [label="__init__\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/race_management.py:9)", style="filled", fillcolor="#65d5ffb2", fontcolor="#000000", group="6"];
+            "code__race_management__RaceManagement__create_race" [label="create_race\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/race_management.py:14)", style="filled", fillcolor="#65d5ffb2", fontcolor="#000000", group="6"];
+        }
+        subgraph "cluster_code__registration" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.registration"];
+            "code__registration__CrewMember" [label="CrewMember\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/registration.py:1)", style="filled", fillcolor="#99abffb2", fontcolor="#000000", group="7"];
+            "code__registration__Registration" [label="Registration\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/registration.py:6)", style="filled", fillcolor="#99abffb2", fontcolor="#000000", group="7"];
+        }
+        subgraph "cluster_code__registration__CrewMember" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.registration.CrewMember"];
+            "code__registration__CrewMember____init__" [label="__init__\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/registration.py:2)", style="filled", fillcolor="#6581ffb2", fontcolor="#000000", group="7"];
+        }
+        subgraph "cluster_code__registration__Registration" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.registration.Registration"];
+            "code__registration__Registration____init__" [label="__init__\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/registration.py:7)", style="filled", fillcolor="#6581ffb2", fontcolor="#000000", group="7"];
+            "code__registration__Registration__get_member" [label="get_member\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/registration.py:16)", style="filled", fillcolor="#6581ffb2", fontcolor="#000000", group="7"];
+            "code__registration__Registration__register_member" [label="register_member\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/registration.py:10)", style="filled", fillcolor="#6581ffb2", fontcolor="#000000", group="7"];
+        }
+        subgraph "cluster_code__results" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.results"];
+            "code__results__Results" [label="Results\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/results.py:1)", style="filled", fillcolor="#be99ffb2", fontcolor="#000000", group="8"];
+        }
+        subgraph "cluster_code__results__Results" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.results.Results"];
+            "code__results__Results____init__" [label="__init__\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/results.py:2)", style="filled", fillcolor="#9d65ffb2", fontcolor="#000000", group="8"];
+            "code__results__Results__record_result" [label="record_result\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/results.py:7)", style="filled", fillcolor="#9d65ffb2", fontcolor="#000000", group="8"];
+        }
+        subgraph "cluster_code__sponsorship" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.sponsorship"];
+            "code__sponsorship__Sponsorship" [label="Sponsorship\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/sponsorship.py:1)", style="filled", fillcolor="#f599ffb2", fontcolor="#000000", group="9"];
+        }
+        subgraph "cluster_code__sponsorship__Sponsorship" {
+
+            graph [style="filled,rounded", fillcolor="#80808018", label="code.sponsorship.Sponsorship"];
+            "code__sponsorship__Sponsorship____init__" [label="__init__\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/sponsorship.py:2)", style="filled", fillcolor="#f165ffb2", fontcolor="#000000", group="9"];
+            "code__sponsorship__Sponsorship__add_sponsor" [label="add_sponsor\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/sponsorship.py:5)", style="filled", fillcolor="#f165ffb2", fontcolor="#000000", group="9"];
+            "code__sponsorship__Sponsorship__total_funds" [label="total_funds\n(/Users/vaibhavikolipaka/Desktop/DASS_A2/dass-assignment-2/2024115019/integration/code/sponsorship.py:8)", style="filled", fillcolor="#f165ffb2", fontcolor="#000000", group="9"];
+        }
+    }
+        "code__crew_management__CrewManagement__assign_role" -> "code__registration__Registration__get_member" [style="solid",  color="#000000"];
+        "code__crew_management__CrewManagement__get_skills" -> "code__crew_management__CrewManagement____init__" [style="solid",  color="#000000"];
+        "code__garage__Garage__repair_car" -> "code__garage__Garage____init__" [style="solid",  color="#000000"];
+        "code__inventory__Inventory__add_car" -> "code__inventory__Inventory____init__" [style="solid",  color="#000000"];
+        "code__inventory__Inventory__add_part" -> "code__inventory__Inventory____init__" [style="solid",  color="#000000"];
+        "code__inventory__Inventory__add_tool" -> "code__inventory__Inventory____init__" [style="solid",  color="#000000"];
+        "code__main" -> "code__crew_management__CrewManagement" [style="solid",  color="#000000"];
+        "code__main" -> "code__garage__Garage" [style="solid",  color="#000000"];
+        "code__main" -> "code__inventory__Inventory" [style="solid",  color="#000000"];
+        "code__main" -> "code__main__main" [style="solid",  color="#000000"];
+        "code__main" -> "code__mission_planning__MissionPlanning" [style="solid",  color="#000000"];
+        "code__main" -> "code__race_management__RaceManagement" [style="solid",  color="#000000"];
+        "code__main" -> "code__registration__Registration" [style="solid",  color="#000000"];
+        "code__main" -> "code__results__Results" [style="solid",  color="#000000"];
+        "code__main" -> "code__sponsorship__Sponsorship" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__crew_management__CrewManagement" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__crew_management__CrewManagement__set_skill" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__garage__Garage" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__garage__Garage__repair_car" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__inventory__Inventory" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__inventory__Inventory__add_car" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__mission_planning__MissionPlanning" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__mission_planning__MissionPlanning__assign_mission" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__race_management__RaceManagement" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__race_management__RaceManagement__create_race" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__registration__Registration" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__registration__Registration__register_member" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__results__Results" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__results__Results__record_result" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__sponsorship__Sponsorship" [style="solid",  color="#000000"];
+        "code__main__main" -> "code__sponsorship__Sponsorship__add_sponsor" [style="solid",  color="#000000"];
+        "code__mission_planning__MissionPlanning__assign_mission" -> "code__mission_planning__Mission" [style="solid",  color="#000000"];
+        "code__mission_planning__MissionPlanning__assign_mission" -> "code__mission_planning__MissionPlanning____init__" [style="solid",  color="#000000"];
+        "code__mission_planning__MissionPlanning__assign_mission" -> "code__mission_planning__Mission____init__" [style="solid",  color="#000000"];
+        "code__mission_planning__MissionPlanning__assign_mission" -> "code__registration__Registration__get_member" [style="solid",  color="#000000"];
+        "code__race_management__RaceManagement__create_race" -> "code__race_management__Race" [style="solid",  color="#000000"];
+        "code__race_management__RaceManagement__create_race" -> "code__race_management__RaceManagement____init__" [style="solid",  color="#000000"];
+        "code__race_management__RaceManagement__create_race" -> "code__race_management__Race____init__" [style="solid",  color="#000000"];
+        "code__race_management__RaceManagement__create_race" -> "code__registration__Registration__get_member" [style="solid",  color="#000000"];
+        "code__registration__Registration__get_member" -> "code__registration__Registration____init__" [style="solid",  color="#000000"];
+        "code__registration__Registration__register_member" -> "code__registration__CrewMember" [style="solid",  color="#000000"];
+        "code__registration__Registration__register_member" -> "code__registration__CrewMember____init__" [style="solid",  color="#000000"];
+        "code__results__Results__record_result" -> "code__inventory__Inventory__update_cash" [style="solid",  color="#000000"];
+        "code__results__Results__record_result" -> "code__results__Results____init__" [style="solid",  color="#000000"];
+        "code__sponsorship__Sponsorship__total_funds" -> "code__sponsorship__Sponsorship____init__" [style="solid",  color="#000000"];
+    }
