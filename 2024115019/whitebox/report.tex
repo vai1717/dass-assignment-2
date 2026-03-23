@@ -3,6 +3,7 @@
 \usepackage{geometry}
 \usepackage{xcolor}
 \usepackage{booktabs}
+\usepackage{graphicx}
 \geometry{margin=1in}
 \title{\textcolor{blue}{White Box Testing Report: MoneyPoly}}
 \author{2024115019}
@@ -13,6 +14,13 @@
 % ─────────────────────────────────────────────────────────────────────────────
 \section*{\textcolor{blue}{1. Control Flow Graph}}
 A Control Flow Graph was drawn by hand covering all major functions: \texttt{run()}, \texttt{play\_turn()}, \texttt{\_move\_and\_resolve()}, \texttt{player.move()}, \texttt{\_handle\_property\_tile()}, \texttt{buy\_property()}, \texttt{pay\_rent()}, \texttt{mortgage\_property()}, \texttt{unmortgage\_property()}, \texttt{trade()}, \texttt{\_apply\_card()}, \texttt{\_handle\_jail\_turn()}, \texttt{\_check\_bankruptcy()}, \texttt{find\_winner()}, and \texttt{auction\_property()}. The CFG clearly marks every decision node, branch, and terminal node.
+
+\begin{figure}[h]
+  \centering
+  \fbox{\rule{0pt}{3in} \rule{0.9\textwidth}{0pt}} % Placeholder box
+  \caption{Control Flow Graph (Insert Image Here)}
+  \label{fig:cfg}
+\end{figure}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section*{\textcolor{blue}{2. Code Quality Analysis (Pylint)}}

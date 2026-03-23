@@ -3,6 +3,7 @@
 \usepackage{geometry}
 \usepackage{xcolor}
 \usepackage{booktabs}
+\usepackage{graphicx}
 \geometry{margin=0.9in}
 \title{\textcolor{blue}{Integration Testing Report: StreetRace Manager}}
 \author{2024115019}
@@ -36,6 +37,13 @@ A Call Graph was drawn showing all function calls within and between modules. Th
   \item \textbf{Intra-module calls:} Internal function-to-data relationships inside each module
   \item \textbf{Inter-module calls:} CrewManagement $\to$ Registration, RaceManagement $\to$ Registration + Inventory, Results $\to$ Inventory, MissionPlanning $\to$ Registration, Garage $\to$ Inventory
 \end{itemize}
+
+\begin{figure}[h]
+  \centering
+  \fbox{\rule{0pt}{3in} \rule{0.9\textwidth}{0pt}} % Placeholder box
+  \caption{Call Graph (Insert Image Here)}
+  \label{fig:call_graph}
+\end{figure}
 
 % ──────────────────────────────────────────────────────
 \section*{\textcolor{blue}{3. Integration Test Design}}
