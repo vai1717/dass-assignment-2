@@ -16,6 +16,9 @@ from player import Player
 from property import Property, PropertyGroup
 from game import Game
 from bank import Bank
+from board import Board
+from dice import Dice
+from cards import CardDeck, ChanceCard, CommunityChestCard
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -334,3 +337,32 @@ def test_player_sent_to_jail_after_3_doubles(monkeypatch):
     game.players[0] = player
     game.play_turn()
     assert player.in_jail is True
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 8: Explicit Individual Module Coverage (Board, Dice, Cards)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Test 26: Board initializes correctly
+def test_board_initialization():
+    """Validates Board setup and property distribution directly."""
+    board = Board()
+    assert len(board.tiles) == 40
+    go_tile = board.get_tile(0)
+    assert go_tile["name"] == "GO"
+
+# Test 27: Dice roll mechanics
+def test_dice_roll_bounds():
+    """Validates Dice rolls strictly within expected bounds."""
+    dice = Dice()
+    roll_val = dice.roll()
+    assert 2 <= roll_val <= 12
+    assert type(dice.is_doubles()) is bool
+
+# Test 28: Card logic parsing
+def test_card_deck_operations():
+    """Validates Card Deck initialization and draw functionality."""
+    deck = CardDeck()
+    assert len(deck.chance_cards) == 16
+    assert len(deck.community_chest_cards) == 16
+    drawn_card = deck.draw_chance()
+    assert isinstance(drawn_card, ChanceCard) or isinstance(drawn_card, CommunityChestCard)
