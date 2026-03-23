@@ -148,15 +148,13 @@ The following white-box test cases were designed to cover all branches, key vari
 \end{enumerate}
 
 \vspace{1em}
-\noindent \textbf{Errors and Fixes (7 Severe Logic Bugs Found and Fixed):}
+\noindent \textbf{Errors and Fixes (Structured strictly according to Git Commits):}
 \begin{enumerate}
-    \item \texttt{game.py (buy\_property)}: Used \texttt{<=} instead of \texttt{<} preventing players with exact balance from purchasing properties. Fixed.
-    \item \texttt{game.py (buy\_property)}: Had no guard protecting against buying a property that was already owned by another player. Fixed.
-    \item \texttt{game.py (pay\_rent)}: Rent was deducted from the payer but never added to the property owner's balance. Fixed.
-    \item \texttt{game.py (find\_winner)}: Used \texttt{min()} instead of \texttt{max()}, causing the poorest player to win the game. Fixed.
-    \item \texttt{player.py (move)}: Player only received \$200 passing Go if they landed \textit{exactly} on position 0, not when wrapping around the board. Fixed.
-    \item \texttt{property.py (all\_owned\_by)}: Used \texttt{any()} instead of \texttt{all()}, erroneously doubling rent even with partial ownership of a color group. Fixed.
-    \item \texttt{property.py (unmortgage)}: Erroneously cleared the mortgage status before the game confirmed the player could afford the unmortgage fee. Fixed.
+    \item \texttt{Commit: "Error 3: Fixed player balance bounds and ownership check in buy\_property"}: Code incorrectly guarded purchases using \texttt{<=} instead of \texttt{<} preventing players with exact sequence balances, and failed to guard unowned properties explicitly. Fixed.
+    \item \texttt{Commit: "Error 4: Fixed pay\_rent to correctly transfer money to the property owner"}: Rent was deducted from the payer but catastrophically never added to the property owner's balance. Fixed.
+    \item \texttt{Commit: "Error 5: Fixed find\_winner to return the wealthiest player rather than the poorest"}: Core game loop incorrectly evaluated \texttt{min()} instead of \texttt{max()}, causing the poorest player to formally win. Fixed.
+    \item \texttt{Commit: "Error 6: Fixed unmortgage flag clearing logic and all\_owned\_by grouping evaluation"}: Evaluator used \texttt{any()} instead of \texttt{all()}, erroneously doubling rent payouts even with incomplete partial group ownership. Unmortgage incorrectly cleared state before transaction completed safely. Fixed.
+    \item \texttt{Commit: "Error 7: Fixed player movement to properly award Go salary on wrapping past index 0"}: Player only acquired the \$200 baseline salary passing Go if they landed \textit{exactly} on sequence position 0, missing wrap-arounds completely. Fixed.
 \end{enumerate}
 
 To ensure complete coverage of these fixes and all conditional branches edge-cases, the original test suite was expanded to \textbf{25} distinct test cases. After these final iterations, all 25 tests pass and 100\% statement and branch coverage is achieved without errors.

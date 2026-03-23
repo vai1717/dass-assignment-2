@@ -481,3 +481,75 @@ def test_ticket_update_status_backwards():
         put2 = requests.put(f"{BASE}/support/tickets/{tid}", headers=HEADERS_USER, json={"status": "OPEN"})
         assert put2.status_code == 400
 
+# --- FINAL EXTENSIVE BLACKBOX VALIDATION ---
+def test_login_missing_credentials():
+    """Login with missing payload returns 400."""
+    r = requests.post(f"{BASE}/auth/login", json={})
+    assert r.status_code == 400
+
+def test_cart_add_duplicate_product_casing():
+    """Cart addition with floating point product_id instead of integer."""
+    r = requests.post(f"{BASE}/cart/add", headers=HEADERS_USER, json={"product_id": 1.5, "quantity": 1})
+    assert r.status_code == 400
+
+def test_ticket_view_nonexistent():
+    """Viewing a completely non-existent support ticket ID returns 404."""
+    r = requests.get(f"{BASE}/support/tickets/999999", headers=HEADERS_USER)
+    assert r.status_code == 404
+
+def test_address_add_empty_body():
+    """Address POST with completely empty JSON payload returns 400."""
+    r = requests.post(f"{BASE}/addresses", headers=HEADERS_USER, json={})
+    assert r.status_code == 400
+
+def test_checkout_missing_address():
+    """Checkout with completely missing address_id returns 400."""
+    requests.post(f"{BASE}/cart/add", headers=HEADERS_USER, json={"product_id": 1, "quantity": 1})
+    r = requests.post(f"{BASE}/checkout", headers=HEADERS_USER, json={"payment_method": "CREDIT_CARD"})
+    assert r.status_code == 400
+
+def test_checkout_unsupported_payment_method():
+    """Checkout via an unknown payment provider 'BITCOIN'."""
+    r = requests.post(f"{BASE}/checkout", headers=HEADERS_USER, json={"payment_method": "BITCOIN", "address_id": 1})
+    assert r.status_code == 400
+
+def test_profile_excessive_name_length():
+    """Profile PUT using a massive name string to test length boundaries."""
+    long_name = "X" * 300
+    r = requests.put(f"{BASE}/profile", headers=HEADERS_USER, json={"name": long_name, "phone": "1234567890"})
+    assert r.status_code == 400
+
+def test_profile_unexpected_role_injection():
+    """Profile PUT injection of 'role': 'admin'."""
+    r = requests.put(f"{BASE}/profile", headers=HEADERS_USER, json={"name": "Attacker", "phone": "1234567890", "role": "admin"})
+    assert r.status_code == 400
+
+def test_review_empty_comment():
+    """Product review using an empty string for comment."""
+    r = requests.post(f"{BASE}/products/1/reviews", headers=HEADERS_USER, json={"rating": 5, "comment": ""})
+    assert r.status_code == 400
+
+def test_review_no_purchase_required_check():
+    """Reviewing a product the user never purchased shouldn't be allowed (usually 403 or 400)."""
+    r = requests.post(f"{BASE}/products/2/reviews", headers=HEADERS_USER, json={"rating": 5, "comment": "Never bought this"})
+    assert r.status_code in (400, 403)
+
+def test_coupon_blank_code():
+    """Applying a completely blank coupon code."""
+    r = requests.post(f"{BASE}/cart/coupon", headers=HEADERS_USER, json={"code": ""})
+    assert r.status_code == 400
+
+def test_loyalty_negative_redemption():
+    """Redeeming negative logic points."""
+    r = requests.post(f"{BASE}/loyalty/redeem", headers=HEADERS_USER, json={"points": -100})
+    assert r.status_code == 400
+
+def test_admin_suspend_self():
+    """Admin trying to suspend themselves shouldn't be valid logic."""
+    r = requests.post(f"{BASE}/admin/users/1/suspend", headers=HEADERS_ADMIN)
+    assert r.status_code in (400, 403)
+
+def test_admin_update_order_to_invalid_state():
+    """Admin updating order status to 'MAGIC_STATE'."""
+    r = requests.put(f"{BASE}/admin/orders/1/status", headers=HEADERS_ADMIN, json={"status": "MAGIC_STATE"})
+    assert r.status_code == 400

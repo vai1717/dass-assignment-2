@@ -1,2 +1,0 @@
-************* Module moneypoly/moneypoly/config.py
-moneypoly/moneypoly/config.py:1:0: F0001: No module named moneypoly/moneypoly/config.py (fatal)
