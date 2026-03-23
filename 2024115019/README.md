@@ -36,4 +36,58 @@
 [Link to your GitHub repository](https://github.com/vai1717/dass-assignment-2)
 
 ---
-Replace <script>.py and <rollnumber> with your actual script and roll number.
+## One Drive link
+
+
+## Repository Structure
+
+```text
+.
+|____README.md
+|____blackbox
+| |____blackbox.pdf
+| |____tests
+| | |____test_quickcart_api.py
+| | |____test_results.txt
+|____integration
+| |____code
+| | |______init__.py
+| | |____call_graph.dot
+| | |____crew_management.py
+| | |____garage.py
+| | |____inventory.py
+| | |____main.py
+| | |____mission_planning.py
+| | |____race_management.py
+| | |____registration.py
+| | |____results.py
+| | |____sponsorship.py
+| | |____tests
+| | | |______init__.py
+| |____diagrams
+| | |____call_graph.jpg
+| |____integration.pdf
+| |____tests
+| | |______init__.py
+| | |____test_integration.py
+|____whitebox
+| |____code
+| | |____moneypoly
+| | | |____README.md
+| | | |____main.py
+| | | |____moneypoly
+| | | | |____bank.py
+| | | | |____board.py
+| | | | |____cards.py
+| | | | |____config.py
+| | | | |____dice.py
+| | | | |____game.py
+| | | | |____player.py
+| | | | |____property.py
+| | | | |____ui.py
+| |____diagrams
+| | |____CFG.jpg
+| |____tests
+| | |____test_whitebox.py
+| |____whitebox.pdf
+```
