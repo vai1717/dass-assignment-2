@@ -18,7 +18,7 @@ from game import Game
 from bank import Bank
 from board import Board
 from dice import Dice
-from cards import CardDeck, ChanceCard, CommunityChestCard
+from cards import CardDeck, CHANCE_CARDS, COMMUNITY_CHEST_CARDS
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -346,9 +346,8 @@ def test_player_sent_to_jail_after_3_doubles(monkeypatch):
 def test_board_initialization():
     """Validates Board setup and property distribution directly."""
     board = Board()
-    assert len(board.tiles) == 40
-    go_tile = board.get_tile(0)
-    assert go_tile["name"] == "GO"
+    assert len(board.properties) == 22
+    assert board.get_tile_type(0) == "go"
 
 # Test 27: Dice roll mechanics
 def test_dice_roll_bounds():
@@ -361,8 +360,7 @@ def test_dice_roll_bounds():
 # Test 28: Card logic parsing
 def test_card_deck_operations():
     """Validates Card Deck initialization and draw functionality."""
-    deck = CardDeck()
-    assert len(deck.chance_cards) == 16
-    assert len(deck.community_chest_cards) == 16
-    drawn_card = deck.draw_chance()
-    assert isinstance(drawn_card, ChanceCard) or isinstance(drawn_card, CommunityChestCard)
+    deck = CardDeck(CHANCE_CARDS)
+    assert len(deck.cards) == 12
+    drawn_card = deck.draw()
+    assert isinstance(drawn_card, dict)
