@@ -3,820 +3,895 @@
 \usepackage{geometry}
 \usepackage{xcolor}
 \usepackage{booktabs}
-\geometry{margin=1in}
+\geometry{margin=0.9in}
 \title{\textcolor{blue}{QuickCart Black-Box API Testing Report}}
 \author{2024115019}
 \date{\today}
 \begin{document}
 \maketitle
 
-% ─────────────────────────────────────────────────────────────────────────────
 \section*{\textcolor{blue}{Introduction}}
-This report documents the black-box testing of the QuickCart REST API. All tests were designed solely from the provided API documentation without any access to the internal implementation. The objective is to verify correct HTTP status codes, proper JSON response structures, and correctness of returned data.
+This report documents black-box testing of the QuickCart REST API using \texttt{pytest} and \texttt{requests}. All 93 test cases were designed from the API documentation without access to implementation. Tests verify correct HTTP status codes, JSON response structures, and data correctness.
 
-The automated test suite (\texttt{test\_quickcart\_api.py}) contains \textbf{93 test cases} implemented with \texttt{pytest} and \texttt{requests}. Results: 74 passing, 19 bugs found.
+\textbf{Result: 74 passing, 19 bugs found.}
 
-% ─────────────────────────────────────────────────────────────────────────────
-\section*{\textcolor{blue}{Test Case Design}}
+\section*{\textcolor{blue}{Test Cases}}
 
-Test cases were designed to cover all five required categories:
-\begin{itemize}[noitemsep]
-  \item \textbf{Valid requests} — happy-path tests verifying correct 2xx responses and JSON structure
-  \item \textbf{Invalid inputs} — malformed or logically invalid data
-  \item \textbf{Missing fields} — omitting required headers or body fields
-  \item \textbf{Wrong data types} — sending strings where integers are required and vice versa
-  \item \textbf{Boundary values} — zero, negative, maximum integers, empty strings, very long strings
-\end{itemize}
-
-Each test case below includes: Input (method + URL + headers + body), Expected Output, Actual Output, and Justification.
-
-% ─────────────────────────────────────────────────────────────────────────────
-\section*{\textcolor{blue}{Test Case Table}}
+Each test case lists: Category, Input (Method + URL + Headers + Body), Expected Output, and Justification.
 
 \renewcommand{\labelitemi}{\textcolor{blue}{$\bullet$}}
 
-% ── Authentication (Global) ──────────────────────────────────────────────────
-\subsection*{\textcolor{blue}{Authentication Tests (Applies to All Endpoints)}}
-
+\subsection*{\textcolor{blue}{Authentication (TC1--TC4)}}
 \begin{enumerate}[label=\textbf{TC\arabic*.}]
 
-  \item \textbf{Valid request — Products with correct header}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products} | Headers: \texttt{X-Roll-Number: 2024115019}
-    \item \textit{Expected:} 200 OK, JSON array of active products
-    \item \textit{Justification:} Confirms the baseline happy path.
-  \end{itemize}
+\item \textbf{test\_auth\_missing\_roll} \textit{[Missing field]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/products} | Headers: none
+  \item \textit{Expected:} 401 Unauthorized
+  \item \textit{Justification:} X-Roll-Number header is mandatory; missing it must be rejected.
+\end{itemize}
 
-  \item \textbf{Missing field — No X-Roll-Number header}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products} | Headers: (none)
-    \item \textit{Expected:} 401 Unauthorized
-    \item \textit{Justification:} Authentication is mandatory; missing it must be rejected.
-  \end{itemize}
+\item \textbf{test\_auth\_invalid\_roll\_type} \textit{[Wrong data type]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/products} | Headers: \texttt{X-Roll-Number: invalid}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Roll number must be numeric; string value must be rejected.
+\end{itemize}
 
-  \item \textbf{Wrong data type — X-Roll-Number is a string}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products} | Headers: \texttt{X-Roll-Number: invalid}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} Header must be a numeric roll number; strings must fail type validation.
-  \end{itemize}
+\item \textbf{test\_auth\_missing\_user\_id} \textit{[Missing field]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/profile} | Headers: \texttt{X-Roll-Number: 2024115019}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} User-scoped endpoints require X-User-ID header.
+\end{itemize}
 
-  \item \textbf{Missing field — No X-User-ID on user-scoped endpoint}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/profile} | Headers: \texttt{X-Roll-Number: 2024115019}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} User-scoped endpoints require X-User-ID.
-  \end{itemize}
-
-  \item \textbf{Wrong data type — X-User-ID is a string}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/profile} | Headers: \texttt{X-Roll-Number: 2024115019, X-User-ID: abc}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} X-User-ID must be numeric integer; strings must be rejected.
-  \end{itemize}
-
-  \item \textbf{Boundary value — X-Roll-Number is very large integer}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products} | Headers: \texttt{X-Roll-Number: 9999999999}
-    \item \textit{Expected:} 200 OK or graceful error
-    \item \textit{Justification:} Tests upper boundary of integer header parsing.
-  \end{itemize}
-
+\item \textbf{test\_auth\_invalid\_user\_id\_type} \textit{[Wrong data type]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/profile} | Headers: \texttt{X-User-ID: abc}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} X-User-ID must be integer; string must fail type validation.
+\end{itemize}
 \end{enumerate}
 
-% ── Products Endpoint ─────────────────────────────────────────────────────────
-\subsection*{\textcolor{blue}{Products: GET /api/v1/products}}
-
+\subsection*{\textcolor{blue}{Admin Endpoints (TC5--TC11)}}
 \begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
 
-  \item \textbf{Valid request — get all products}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products} | Headers: \texttt{X-Roll-Number: 2024115019}
-    \item \textit{Expected:} 200 OK, JSON array, each item has \texttt{id, name, price, category, is\_active}
-    \item \textit{Justification:} Validates complete response structure against the API spec.
-  \end{itemize}
+\item \textbf{test\_admin\_get\_users\_returns\_200} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/admin/users} | X-Roll-Number: 2024115019
+  \item \textit{Expected:} 200 OK, list of users
+  \item \textit{Justification:} Admin must be able to list all registered users.
+\end{itemize}
 
-  \item \textbf{Valid request — filter by category}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products?category=Electronics} | Headers: \texttt{X-Roll-Number: 2024115019}
-    \item \textit{Expected:} 200 OK, only Electronics products
-    \item \textit{Justification:} Verifies filtering logic works as documented.
-  \end{itemize}
+\item \textbf{test\_admin\_get\_carts\_returns\_200} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/admin/carts}
+  \item \textit{Expected:} 200 OK
+  \item \textit{Justification:} Admin monitoring of all user carts must work.
+\end{itemize}
 
-  \item \textbf{Valid request — search by name}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products?search=phone}
-    \item \textit{Expected:} 200 OK, only products whose name contains "phone"
-    \item \textit{Justification:} Validates search functionality.
-  \end{itemize}
+\item \textbf{test\_admin\_get\_orders\_returns\_200} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/admin/orders}
+  \item \textit{Expected:} 200 OK, orders include \texttt{id} field \textit{[Bug 9]}
+  \item \textit{Justification:} Order IDs are required for invoice generation.
+\end{itemize}
 
-  \item \textbf{Valid request — sort price ascending}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products?sort=price\_asc}
-    \item \textit{Expected:} 200 OK, products from lowest to highest price
-    \item \textit{Justification:} Confirms ascending sort works per spec.
-  \end{itemize}
+\item \textbf{test\_admin\_get\_products\_returns\_inactive} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/admin/products}
+  \item \textit{Expected:} 200 OK; includes products with \texttt{is\_active=false}
+  \item \textit{Justification:} Admin list must include inactive products unlike public list.
+\end{itemize}
 
-  \item \textbf{Valid request — sort price descending}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products?sort=price\_desc}
-    \item \textit{Expected:} 200 OK, products from highest to lowest price
-    \item \textit{Justification:} Confirms descending sort works per spec.
-  \end{itemize}
+\item \textbf{test\_admin\_get\_coupons\_returns\_200} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/admin/coupons}
+  \item \textit{Expected:} 200 OK
+  \item \textit{Justification:} Admin coupon management must be accessible.
+\end{itemize}
 
-  \item \textbf{Invalid input — unknown sort key} \textit{[Bug 11]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products?sort=random}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Actual:} 200 OK (bug found)
-    \item \textit{Justification:} Unknown sort keys must be rejected, not silently ignored.
-  \end{itemize}
+\item \textbf{test\_admin\_get\_tickets\_returns\_200} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/admin/support/tickets}
+  \item \textit{Expected:} 200 OK
+  \item \textit{Justification:} Admin must view all support tickets.
+\end{itemize}
 
-  \item \textbf{Boundary value — empty search string}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products?search=}
-    \item \textit{Expected:} 200 OK, all products returned
-    \item \textit{Justification:} Empty string is a valid boundary; should not crash.
-  \end{itemize}
-
-  \item \textbf{Boundary value — very long search string (1000 chars)}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products?search=aaa...} (1000 chars)
-    \item \textit{Expected:} 200 OK with empty list, or 400 if input too long
-    \item \textit{Justification:} Tests input length limits.
-  \end{itemize}
-
-  \item \textbf{Inactive products not returned in public list}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products}
-    \item \textit{Expected:} 200 OK, no products where \texttt{is\_active = false}
-    \item \textit{Justification:} Public API must filter out inactive products per spec.
-  \end{itemize}
-
-  \item \textbf{Valid request — get single product by ID}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products/1}
-    \item \textit{Expected:} 200 OK, product object with correct fields
-    \item \textit{Justification:} Core product lookup must work.
-  \end{itemize}
-
-  \item \textbf{Invalid input — non-existent product ID}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products/99999}
-    \item \textit{Expected:} 404 Not Found
-    \item \textit{Justification:} Missing resources must return 404.
-  \end{itemize}
-
-  \item \textbf{Wrong data type — product ID is a string}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products/abc}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} Product ID must be numeric.
-  \end{itemize}
-
+\item \textbf{test\_admin\_get\_addresses\_returns\_200} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/admin/addresses}
+  \item \textit{Expected:} 200 OK
+  \item \textit{Justification:} Validates admin address visibility endpoint.
+\end{itemize}
 \end{enumerate}
 
-% ── Reviews ──────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{blue}{Reviews: POST /api/v1/products/\{id\}/reviews}}
-
+\subsection*{\textcolor{blue}{Profile (TC12--TC19)}}
 \begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
 
-  \item \textbf{Valid request — submit review with valid rating}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/products/1/reviews} | Body: \texttt{\{"rating": 4, "comment": "Good"\}}
-    \item \textit{Expected:} 201 Created
-    \item \textit{Justification:} Happy path for review submission.
-  \end{itemize}
+\item \textbf{test\_profile\_read\_accessibility} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/profile} | X-User-ID: 1
+  \item \textit{Expected:} 200 OK
+  \item \textit{Justification:} Core profile read happy path.
+\end{itemize}
 
-  \item \textbf{Boundary value — rating = 0} \textit{[Bug 7]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/products/1/reviews} | Body: \texttt{\{"rating": 0, "comment": "Bad"\}}
-    \item \textit{Expected:} 400 Bad Request (rating must be 1–5)
-    \item \textit{Actual:} 200 OK (bug found)
-    \item \textit{Justification:} Zero is below the valid range; must be rejected.
-  \end{itemize}
+\item \textbf{test\_profile\_update\_name\_minimum\_boundary} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{PUT /api/v1/profile} | Body: \texttt{\{"name":"A"\}}
+  \item \textit{Expected:} 200 OK (1-char name at minimum boundary)
+  \item \textit{Justification:} Tests minimum name length accepted by API.
+\end{itemize}
 
-  \item \textbf{Boundary value — rating = 6} \textit{[Bug 8]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/products/1/reviews} | Body: \texttt{\{"rating": 6, "comment": "Bad"\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Actual:} 200 OK (bug found)
-    \item \textit{Justification:} 6 exceeds valid max rating; must be rejected.
-  \end{itemize}
+\item \textbf{test\_profile\_update\_name\_maximum\_boundary} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} name = 50 characters
+  \item \textit{Expected:} 200 OK
+  \item \textit{Justification:} Tests maximum valid name length.
+\end{itemize}
 
-  \item \textbf{Missing field — no rating in body}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/products/1/reviews} | Body: \texttt{\{"comment": "Nice"\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} Rating is required; missing it must fail.
-  \end{itemize}
+\item \textbf{test\_profile\_update\_name\_exceeds\_maximum} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} name = 51+ characters
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Exceeding max length must be rejected.
+\end{itemize}
 
-  \item \textbf{Wrong data type — rating is a string}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/products/1/reviews} | Body: \texttt{\{"rating": "five", "comment": ""\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} Rating must be an integer.
-  \end{itemize}
+\item \textbf{test\_profile\_update\_phone\_wrong\_length} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{"phone":"12345"}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Phone must be exactly 10 digits.
+\end{itemize}
 
-  \item \textbf{Invalid input — review for non-existent product} \textit{[Bug 12]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/products/99999/reviews}
-    \item \textit{Expected:} 404 Not Found
-    \item \textit{Actual:} 200 OK with empty array (bug found)
-    \item \textit{Justification:} Should return 404 for non-existent product.
-  \end{itemize}
+\item \textbf{test\_profile\_update\_phone\_excess\_length} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} phone = 11 digits
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Tests upper boundary of phone field.
+\end{itemize}
 
-  \item \textbf{Invalid input — review without purchase} \textit{[Bug 16]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/products/2/reviews} | Body: \texttt{\{"rating": 5, "comment": "Never bought"\}}
-    \item \textit{Expected:} 403 Forbidden
-    \item \textit{Actual:} 200 OK (bug found)
-    \item \textit{Justification:} Only purchasers should review; unpurchased reviews must be blocked.
-  \end{itemize}
+\item \textbf{test\_profile\_read\_has\_fields} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Expected:} Response includes \texttt{name, email, phone}
+  \item \textit{Justification:} Validates JSON structure against API spec.
+\end{itemize}
 
+\item \textbf{test\_profile\_excessive\_name\_length} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} name = 200 characters
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Very long input must be capped.
+\end{itemize}
+
+\item \textbf{test\_profile\_unexpected\_role\_injection} \textit{[Invalid input] \textit{[Bug 15]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{PUT /api/v1/profile} | Body: \texttt{\{"name":"A","role":"admin"\}}
+  \item \textit{Expected:} 400 or role field silently dropped
+  \item \textit{Justification:} Role is immutable; accepting it enables privilege escalation.
+\end{itemize}
 \end{enumerate}
 
-% ── Cart Endpoint ─────────────────────────────────────────────────────────────
-\subsection*{\textcolor{blue}{Cart: POST /api/v1/cart/add \& GET /api/v1/cart}}
-
+\subsection*{\textcolor{blue}{Addresses (TC20--TC28)}}
 \begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
 
-  \item \textbf{Valid request — add product to cart}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/cart/add} | Headers: \texttt{X-User-ID: 1} | Body: \texttt{\{"product\_id": 1, "quantity": 2\}}
-    \item \textit{Expected:} 200 OK
-    \item \textit{Justification:} Core cart functionality happy path.
-  \end{itemize}
+\item \textbf{test\_address\_view} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/addresses}
+  \item \textit{Expected:} 200 OK, list of addresses
+  \item \textit{Justification:} Core address read path.
+\end{itemize}
 
-  \item \textbf{Boundary value — quantity = 0} \textit{[Bug 3]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/cart/add} | Body: \texttt{\{"product\_id": 1, "quantity": 0\}}
-    \item \textit{Expected:} 400 Bad Request (quantity $\geq$ 1)
-    \item \textit{Actual:} 200 OK (bug found)
-    \item \textit{Justification:} Zero quantity is meaningless; must be rejected.
-  \end{itemize}
+\item \textbf{test\_address\_add\_invalid\_label} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Body: \texttt{\{"label":"RANDOM",...\}}
+  \item \textit{Expected:} 400 Bad Request (label must be HOME/WORK/OTHER)
+  \item \textit{Justification:} Enum validation for label field.
+\end{itemize}
 
-  \item \textbf{Boundary value — negative quantity} \textit{[Bug 4]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/cart/add} | Body: \texttt{\{"product\_id": 1, "quantity": -5\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Actual:} 200 OK (bug found)
-    \item \textit{Justification:} Negative quantity corrupts cart state.
-  \end{itemize}
+\item \textbf{test\_address\_add\_street\_min\_length} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} street = 5 characters (minimum)
+  \item \textit{Expected:} 200 OK
+  \item \textit{Justification:} Tests lower boundary of street field.
+\end{itemize}
 
-  \item \textbf{Missing field — no product\_id}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/cart/add} | Body: \texttt{\{"quantity": 2\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} product\_id is required.
-  \end{itemize}
+\item \textbf{test\_address\_add\_street\_max\_length} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} street = 100 characters
+  \item \textit{Expected:} 200 OK
+  \item \textit{Justification:} Tests upper boundary of street field.
+\end{itemize}
 
-  \item \textbf{Wrong data type — quantity is a string}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/cart/add} | Body: \texttt{\{"product\_id": 1, "quantity": "two"\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} Quantity must be an integer.
-  \end{itemize}
+\item \textbf{test\_address\_add\_street\_excess\_length} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} street = 101+ characters
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Exceeding max must be rejected.
+\end{itemize}
 
-  \item \textbf{Invalid input — product\_id does not exist}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/cart/add} | Body: \texttt{\{"product\_id": 99999, "quantity": 1\}}
-    \item \textit{Expected:} 404 Not Found
-    \item \textit{Justification:} Cannot add nonexistent product to cart.
-  \end{itemize}
+\item \textbf{test\_address\_add\_city\_min\_length} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} city = 2 characters
+  \item \textit{Expected:} 200 OK
+  \item \textit{Justification:} Tests minimum city field length.
+\end{itemize}
 
-  \item \textbf{Valid request — view cart items}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/cart} | Headers: \texttt{X-User-ID: 1}
-    \item \textit{Expected:} 200 OK, cart items with \texttt{product\_id, quantity, price, subtotal}
-    \item \textit{Justification:} Cart read must include price per item.
-  \end{itemize}
+\item \textbf{test\_address\_add\_pincode\_invalid\_length} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} pincode = "123" (3 digits)
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Pincode must be exactly 6 digits.
+\end{itemize}
 
-  \item \textbf{Invalid input — cart items missing price field} \textit{[Bug 5]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/cart} after adding items
-    \item \textit{Expected:} Each cart item contains \texttt{price} field
-    \item \textit{Actual:} \texttt{price} key missing from response (bug found)
-    \item \textit{Justification:} Price is needed for client-side subtotal calculation.
-  \end{itemize}
+\item \textbf{test\_address\_add\_returns\_full\_object} \textit{[Valid request] \textit{[Bug 1]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{POST /api/v1/addresses} | valid body
+  \item \textit{Expected:} Flat address object with \texttt{address\_id}
+  \item \textit{Justification:} Response schema must match API spec.
+\end{itemize}
 
-  \item \textbf{Invalid input — cart total always shows 0} \textit{[Bug 6]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/cart} with populated cart
-    \item \textit{Expected:} \texttt{total} = sum of all item subtotals
-    \item \textit{Actual:} \texttt{total} always returns 0 (bug found)
-    \item \textit{Justification:} Incorrect total breaks checkout and order flow.
-  \end{itemize}
+\item \textbf{test\_address\_update\_prohibited\_fields} \textit{[Invalid input] \textit{[Bug 2]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{PUT /api/v1/addresses/1}
+  \item \textit{Expected:} 200 OK
+  \item \textit{Justification:} Address update is a documented endpoint.
+\end{itemize}
 
-  \item \textbf{Invalid input — apply blank coupon code} \textit{[Bug 17]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/cart/coupon} | Body: \texttt{\{"code": ""\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Actual:} 404 Not Found (bug found)
-    \item \textit{Justification:} Empty coupon code should give a validation error, not a routing 404.
-  \end{itemize}
+\item \textbf{test\_address\_delete\_nonexistent} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{DELETE /api/v1/addresses/99999}
+  \item \textit{Expected:} 404 Not Found
+  \item \textit{Justification:} Deleting non-existent address must return 404.
+\end{itemize}
 
+\item \textbf{test\_address\_add\_empty\_body} \textit{[Missing field]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{POST /api/v1/addresses} | Body: \texttt{\{\}}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} All address fields are required.
+\end{itemize}
 \end{enumerate}
 
-% ── Addresses Endpoint ────────────────────────────────────────────────────────
-\subsection*{\textcolor{blue}{Addresses: POST \& PUT /api/v1/addresses}}
-
+\subsection*{\textcolor{blue}{Products (TC29--TC37)}}
 \begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
 
-  \item \textbf{Valid request — create address}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/addresses} | Headers: \texttt{X-User-ID: 1} | Body: \texttt{\{"label": "HOME", "street": "123 Main St", "city": "Hyderabad", "pincode": "500001"\}}
-    \item \textit{Expected:} 201 Created, returns flat address object with \texttt{address\_id}
-    \item \textit{Justification:} Core address creation happy path.
-  \end{itemize}
+\item \textbf{test\_products\_list\_returns\_active\_only} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/products}
+  \item \textit{Expected:} 200 OK; no products with \texttt{is\_active=false}
+  \item \textit{Justification:} Public list must filter inactive products.
+\end{itemize}
 
-  \item \textbf{Invalid input — POST address returns nested response instead of flat} \textit{[Bug 1]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} Same as above
-    \item \textit{Expected:} Flat address object \texttt{\{"address\_id": ..., "street": ...\}}
-    \item \textit{Actual:} Nested \texttt{\{"address": \{...\}, "message": "Address added successfully"\}} (bug found)
-    \item \textit{Justification:} Response structure deviates from documented schema.
-  \end{itemize}
+\item \textbf{test\_products\_lookup\_nonexistent} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/products/99999}
+  \item \textit{Expected:} 404 Not Found
+  \item \textit{Justification:} Non-existent product must return 404.
+\end{itemize}
 
-  \item \textbf{Invalid input — PUT address returns 404} \textit{[Bug 2]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{PUT /api/v1/addresses/1} | Body: \texttt{\{"street": "New Street"\}}
-    \item \textit{Expected:} 200 OK, address updated
-    \item \textit{Actual:} 404 Not Found (bug found — endpoint not mapped)
-    \item \textit{Justification:} Address update is a documented endpoint; must be reachable.
-  \end{itemize}
+\item \textbf{test\_products\_filter\_category} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/products?category=Electronics}
+  \item \textit{Expected:} 200 OK; only Electronics products
+  \item \textit{Justification:} Category filter must work correctly.
+\end{itemize}
 
-  \item \textbf{Missing field — create address without pincode}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/addresses} | Body: \texttt{\{"label": "HOME", "street": "Main St", "city": "Hyd"\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} Pincode is required per API spec.
-  \end{itemize}
+\item \textbf{test\_products\_search\_name} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/products?search=phone}
+  \item \textit{Expected:} 200 OK; filtered results
+  \item \textit{Justification:} Name search must return matching products.
+\end{itemize}
 
-  \item \textbf{Wrong data type — pincode as integer}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/addresses} | Body: \texttt{\{"label": "HOME", "street": "St", "city": "City", "pincode": 500001\}}
-    \item \textit{Expected:} 400 Bad Request (pincode must be a string)
-    \item \textit{Justification:} Type validation for pincode field.
-  \end{itemize}
+\item \textbf{test\_products\_sort\_price\_asc} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{?sort=price\_asc}
+  \item \textit{Expected:} Ascending order by price
+  \item \textit{Justification:} Sort must reorder results correctly.
+\end{itemize}
 
-  \item \textbf{Boundary value — empty string for street}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/addresses} | Body: \texttt{\{"label": "HOME", "street": "", "city": "City", "pincode": "500001"\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} Empty required strings should not be accepted.
-  \end{itemize}
+\item \textbf{test\_products\_sort\_price\_desc} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{?sort=price\_desc}
+  \item \textit{Expected:} Descending order by price
+  \item \textit{Justification:} Descending sort confirmation.
+\end{itemize}
 
+\item \textbf{test\_products\_sort\_invalid} \textit{[Invalid input] \textit{[Bug 11]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{?sort=random}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Unknown sort keys must be rejected.
+\end{itemize}
+
+\item \textbf{test\_admin\_get\_user\_specific} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/admin/users/1}
+  \item \textit{Expected:} 200 OK
+  \item \textit{Justification:} Specific user lookup must work.
+\end{itemize}
+
+\item \textbf{test\_admin\_get\_user\_invalid} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/admin/users/99999}
+  \item \textit{Expected:} 404 Not Found
+  \item \textit{Justification:} Non-existent user must return 404.
+\end{itemize}
 \end{enumerate}
 
-% ── Orders Endpoint ───────────────────────────────────────────────────────────
-\subsection*{\textcolor{blue}{Orders: POST /api/v1/orders \& GET /api/v1/orders/\{id\}/invoice}}
-
+\subsection*{\textcolor{blue}{Cart (TC38--TC50)}}
 \begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
 
-  \item \textbf{Valid request — place order}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/orders} | Headers: \texttt{X-User-ID: 1} | Body: \texttt{\{"address\_id": 1\}}
-    \item \textit{Expected:} 201 Created, order object returned
-    \item \textit{Justification:} Core order placement happy path.
-  \end{itemize}
+\item \textbf{test\_cart\_add\_zero\_quantity} \textit{[Boundary value] \textit{[Bug 3]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{POST /api/v1/cart/add} | \texttt{\{"product\_id":1,"quantity":0\}}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Zero quantity is meaningless and must be rejected.
+\end{itemize}
 
-  \item \textbf{Missing field — order without address\_id}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/orders} | Body: \texttt{\{\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} address\_id is required for delivery.
-  \end{itemize}
+\item \textbf{test\_cart\_add\_negative\_quantity} \textit{[Boundary value] \textit{[Bug 4]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{"quantity":-5}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Negative quantity corrupts cart state.
+\end{itemize}
 
-  \item \textbf{Invalid input — admin order list missing id field} \textit{[Bug 9]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/admin/orders} | Headers: \texttt{X-Roll-Number: 2024115019}
-    \item \textit{Expected:} Each order has an \texttt{id} field
-    \item \textit{Actual:} \texttt{id} field missing from all orders (bug found)
-    \item \textit{Justification:} Order ID is required for downstream operations like invoices.
-  \end{itemize}
+\item \textbf{test\_cart\_add\_nonexistent\_product} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{"product\_id":99999}
+  \item \textit{Expected:} 404 Not Found
+  \item \textit{Justification:} Cannot add nonexistent product.
+\end{itemize}
 
-  \item \textbf{Invalid input — invoice fails due to missing order id schema} \textit{[Bug 10]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/orders/1/invoice}
-    \item \textit{Expected:} 200 OK with invoice details
-    \item \textit{Actual:} Fails because upstream order IDs are not persisted (derived from Bug 9)
-    \item \textit{Justification:} Invoice generation depends on order IDs being correctly exposed.
-  \end{itemize}
+\item \textbf{test\_cart\_add\_quantity\_exceeds\_stock} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} quantity=999999
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Cannot add more than available stock.
+\end{itemize}
 
-  \item \textbf{Invalid input — invalid order status in admin update} \textit{[Bug 19]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{PUT /api/v1/admin/orders/1/status} | Body: \texttt{\{"status": "MAGIC\_STATE"\}}
-    \item \textit{Expected:} 400 Bad Request (unrecognized status enum)
-    \item \textit{Actual:} 404 Not Found (bug found)
-    \item \textit{Justification:} Invalid enum values must return 400, not a routing 404.
-  \end{itemize}
+\item \textbf{test\_cart\_duplicate\_product\_combines\_quantities} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Add same product twice
+  \item \textit{Expected:} Quantities combined in one cart entry
+  \item \textit{Justification:} Spec requires quantity accumulation, not duplicate entries.
+\end{itemize}
 
+\item \textbf{test\_cart\_update\_zero\_quantity} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Update cart item quantity to 0
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Zero quantity update must be rejected.
+\end{itemize}
+
+\item \textbf{test\_cart\_remove\_nonexistent} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Remove non-existent cart item
+  \item \textit{Expected:} 404 Not Found
+  \item \textit{Justification:} Removing absent item must return 404.
+\end{itemize}
+
+\item \textbf{test\_cart\_subtotal\_calculation} \textit{[Valid request] \textit{[Bug 5]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Expected:} Each cart item includes \texttt{price} field
+  \item \textit{Justification:} Price is needed for client-side subtotal calculation.
+\end{itemize}
+
+\item \textbf{test\_cart\_total\_sum\_calculation} \textit{[Valid request] \textit{[Bug 6]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Expected:} \texttt{total} == sum of all item subtotals
+  \item \textit{Justification:} Incorrect total breaks checkout.
+\end{itemize}
+
+\item \textbf{test\_checkout\_invalid\_method} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Payment method not in allowed enum
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Unsupported payment methods must fail.
+\end{itemize}
+
+\item \textbf{test\_checkout\_empty\_cart} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Checkout with empty cart
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Cannot place order on empty cart.
+\end{itemize}
+
+\item \textbf{test\_cart\_add\_duplicate\_product\_casing} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Add product with mismatched casing in ID
+  \item \textit{Expected:} 400 or 404
+  \item \textit{Justification:} Product IDs must be case-consistently validated.
+\end{itemize}
+
+\item \textbf{test\_checkout\_missing\_address} \textit{[Missing field]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Checkout without \texttt{address\_id}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Delivery address is required for order placement.
+\end{itemize}
+
+\item \textbf{test\_checkout\_unsupported\_payment\_method} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{"payment\_method":"CRYPTO"}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Validates payment method enum constraint.
+\end{itemize}
 \end{enumerate}
 
-% ── Auth Endpoint ─────────────────────────────────────────────────────────────
-\subsection*{\textcolor{blue}{Auth: POST /api/v1/auth/login}}
-
+\subsection*{\textcolor{blue}{Wallet and Loyalty (TC51--TC59)}}
 \begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
 
-  \item \textbf{Valid request — login with correct credentials}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/auth/login} | Body: \texttt{\{"email": "user@test.com", "password": "pass123"\}}
-    \item \textit{Expected:} 200 OK, returns token or user session
-    \item \textit{Justification:} Core authentication happy path.
-  \end{itemize}
+\item \textbf{test\_wallet\_add\_zero} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Add \$0 to wallet
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Adding zero has no effect and should be rejected.
+\end{itemize}
 
-  \item \textbf{Missing field — empty body on login} \textit{[Bug 14]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/auth/login} | Body: \texttt{\{\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Actual:} 404 Not Found (bug found)
-    \item \textit{Justification:} Empty body should produce a validation error, not a routing failure.
-  \end{itemize}
+\item \textbf{test\_wallet\_add\_exceeding\_max} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Add amount exceeding maximum wallet balance
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Wallet has a documented upper limit.
+\end{itemize}
 
-  \item \textbf{Invalid input — wrong password}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/auth/login} | Body: \texttt{\{"email": "user@test.com", "password": "wrongpass"\}}
-    \item \textit{Expected:} 401 Unauthorized
-    \item \textit{Justification:} Incorrect credentials must be rejected.
-  \end{itemize}
+\item \textbf{test\_wallet\_pay\_negative} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Pay negative amount from wallet
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Negative payment is semantically invalid.
+\end{itemize}
 
-  \item \textbf{Wrong data type — email is an integer}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/auth/login} | Body: \texttt{\{"email": 12345, "password": "pass"\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} Email must be a string.
-  \end{itemize}
+\item \textbf{test\_wallet\_pay\_insufficient} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Pay more than wallet balance
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Cannot overdraft wallet balance.
+\end{itemize}
 
+\item \textbf{test\_wallet\_balance\_read} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/wallet}
+  \item \textit{Expected:} 200 OK with \texttt{balance} field
+  \item \textit{Justification:} Validates wallet read structure.
+\end{itemize}
+
+\item \textbf{test\_wallet\_pay\_exact\_amount} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Pay exactly wallet balance
+  \item \textit{Expected:} 200 OK, balance becomes 0
+  \item \textit{Justification:} Exact-balance payment is a valid boundary case.
+\end{itemize}
+
+\item \textbf{test\_loyalty\_redeem\_zero} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Redeem 0 loyalty points
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Zero-point redemption must be rejected.
+\end{itemize}
+
+\item \textbf{test\_loyalty\_redeem\_too\_many} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Redeem more points than available
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Cannot redeem more than earned.
+\end{itemize}
+
+\item \textbf{test\_loyalty\_negative\_redemption} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Redeem negative points
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Negative redemption is invalid.
+\end{itemize}
 \end{enumerate}
 
-% ── Profile Endpoint ──────────────────────────────────────────────────────────
-\subsection*{\textcolor{blue}{Profile: GET \& PUT /api/v1/profile}}
-
+\subsection*{\textcolor{blue}{Orders and Invoice (TC60--TC66)}}
 \begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
 
-  \item \textbf{Valid request — get user profile}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/profile} | Headers: \texttt{X-User-ID: 1}
-    \item \textit{Expected:} 200 OK, user object with name, email, phone
-    \item \textit{Justification:} Core profile read happy path.
-  \end{itemize}
+\item \textbf{test\_orders\_cancel\_nonexistent} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Cancel order ID 99999
+  \item \textit{Expected:} 404 Not Found
+  \item \textit{Justification:} Non-existent order cancellation must return 404.
+\end{itemize}
 
-  \item \textbf{Valid request — update profile name and phone}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{PUT /api/v1/profile} | Body: \texttt{\{"name": "Alice", "phone": "9876543210"\}}
-    \item \textit{Expected:} 200 OK, updated profile returned
-    \item \textit{Justification:} Profile update happy path.
-  \end{itemize}
+\item \textbf{test\_order\_invoice\_subtotal} \textit{[Valid request] \textit{[Bug 10]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/orders/\{id\}/invoice}
+  \item \textit{Expected:} 200 OK with correct subtotal
+  \item \textit{Justification:} Invoice must compute correct item subtotals.
+\end{itemize}
 
-  \item \textbf{Invalid input — role injection via PUT profile} \textit{[Bug 15]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{PUT /api/v1/profile} | Body: \texttt{\{"name": "Attacker", "phone": "1234567890", "role": "admin"\}}
-    \item \textit{Expected:} 400 Bad Request or silently ignores \texttt{role} field
-    \item \textit{Actual:} 200 OK, accepts \texttt{role} field without rejection (bug found)
-    \item \textit{Justification:} Role is an immutable field; accepting it opens privilege escalation.
-  \end{itemize}
+\item \textbf{test\_order\_invoice\_gst\_rate} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Expected:} GST applied at documented rate
+  \item \textit{Justification:} Tax computation must match spec exactly.
+\end{itemize}
 
-  \item \textbf{Boundary value — empty name string}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{PUT /api/v1/profile} | Body: \texttt{\{"name": "", "phone": "9876543210"\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} Name must be a non-empty string.
-  \end{itemize}
+\item \textbf{test\_order\_invoice\_nonexistent} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Invoice for order 99999
+  \item \textit{Expected:} 404 Not Found
+  \item \textit{Justification:} Non-existent order invoice must return 404.
+\end{itemize}
 
+\item \textbf{test\_checkout\_cod\_limit} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} COD order exceeding documented limit
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} COD has a maximum order value limit.
+\end{itemize}
+
+\item \textbf{test\_admin\_update\_order\_to\_invalid\_state} \textit{[Invalid input] \textit{[Bug 19]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{PUT /api/v1/admin/orders/1/status} | \texttt{\{"status":"MAGIC\_STATE"\}}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Invalid status enum must be rejected.
+\end{itemize}
+
+\item \textbf{test\_login\_missing\_credentials} \textit{[Missing field] \textit{[Bug 14]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{POST /api/v1/auth/login} | Body: \texttt{\{\}}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Missing credentials must give validation error, not 404.
+\end{itemize}
 \end{enumerate}
 
-% ── Support Tickets ───────────────────────────────────────────────────────────
-\subsection*{\textcolor{blue}{Support: POST \& PUT /api/v1/support/tickets}}
-
+\subsection*{\textcolor{blue}{Reviews (TC67--TC74)}}
 \begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
 
-  \item \textbf{Valid request — create support ticket}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/support/tickets} | Body: \texttt{\{"subject": "Order issue", "description": "My order is late"\}}
-    \item \textit{Expected:} 201 Created, ticket object returned
-    \item \textit{Justification:} Core ticket creation happy path.
-  \end{itemize}
+\item \textbf{test\_review\_rating\_zero} \textit{[Boundary value] \textit{[Bug 7]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{"rating":0}
+  \item \textit{Expected:} 400 Bad Request (rating must be 1--5)
+  \item \textit{Justification:} Zero is below valid range.
+\end{itemize}
 
-  \item \textbf{Invalid input — PUT support ticket returns 404} \textit{[Bug 13]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{PUT /api/v1/support/tickets/1} | Body: \texttt{\{"status": "IN\_PROGRESS"\}}
-    \item \textit{Expected:} 200 OK
-    \item \textit{Actual:} 404 Not Found (endpoint not mapped)
-    \item \textit{Justification:} Update ticket status is a documented feature that must work.
-  \end{itemize}
+\item \textbf{test\_review\_rating\_six} \textit{[Boundary value] \textit{[Bug 8]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{"rating":6}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Six exceeds valid max.
+\end{itemize}
 
-  \item \textbf{Missing field — ticket without subject}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/support/tickets} | Body: \texttt{\{"description": "Help"\}}
-    \item \textit{Expected:} 400 Bad Request
-    \item \textit{Justification:} Subject is required for ticket creation.
-  \end{itemize}
+\item \textbf{test\_review\_comment\_empty} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{"comment":""}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Empty comment must be rejected.
+\end{itemize}
 
+\item \textbf{test\_review\_comment\_exceeds\_max} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} comment = 1001+ characters
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Comment length must be capped.
+\end{itemize}
+
+\item \textbf{test\_review\_average\_rating\_decimal} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Expected:} Average rating is a decimal, not rounded whole
+  \item \textit{Justification:} Rating accuracy requires decimal precision.
+\end{itemize}
+
+\item \textbf{test\_review\_view} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/products/1/reviews}
+  \item \textit{Expected:} 200 OK, list of reviews
+  \item \textit{Justification:} Review read happy path.
+\end{itemize}
+
+\item \textbf{test\_review\_view\_nonexistent} \textit{[Invalid input] \textit{[Bug 12]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/products/99999/reviews}
+  \item \textit{Expected:} 404 Not Found
+  \item \textit{Justification:} Non-existent product reviews must return 404.
+\end{itemize}
+
+\item \textbf{test\_review\_empty\_comment} \textit{[Missing field]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Review without comment field
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Comment is required per spec.
+\end{itemize}
+
+\item \textbf{test\_review\_no\_purchase\_required\_check} \textit{[Invalid input] \textit{[Bug 16]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Review for product never purchased
+  \item \textit{Expected:} 403 Forbidden
+  \item \textit{Justification:} Only purchasers may review.
+\end{itemize}
 \end{enumerate}
 
-% ── Admin Endpoints ───────────────────────────────────────────────────────────
-\subsection*{\textcolor{blue}{Admin Endpoints}}
-
+\subsection*{\textcolor{blue}{Support Tickets (TC75--TC82)}}
 \begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
 
-  \item \textbf{Valid request — admin get all users}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/admin/users} | Headers: \texttt{X-Roll-Number: 2024115019}
-    \item \textit{Expected:} 200 OK, list of all users
-    \item \textit{Justification:} Admin must be able to list all registered users.
-  \end{itemize}
+\item \textbf{test\_ticket\_subject\_minimum\_length} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} subject = 5 chars (minimum)
+  \item \textit{Expected:} 201 Created
+  \item \textit{Justification:} Tests lower boundary for subject.
+\end{itemize}
 
-  \item \textbf{Valid request — admin get all carts}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/admin/carts}
-    \item \textit{Expected:} 200 OK
-    \item \textit{Justification:} Admin monitoring of all user carts.
-  \end{itemize}
+\item \textbf{test\_ticket\_subject\_maximum\_length} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} subject = 100 chars
+  \item \textit{Expected:} 201 Created
+  \item \textit{Justification:} Tests upper boundary for subject.
+\end{itemize}
 
-  \item \textbf{Valid request — admin see inactive products}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/admin/products}
-    \item \textit{Expected:} 200 OK; response includes products where \texttt{is\_active = false}
-    \item \textit{Justification:} Admin list must differ from public list by including inactive items.
-  \end{itemize}
+\item \textbf{test\_ticket\_message\_empty} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} message = ""
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Empty message must be rejected.
+\end{itemize}
 
-  \item \textbf{Invalid input — admin self-suspension} \textit{[Bug 18]}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{POST /api/v1/admin/users/1/suspend}
-    \item \textit{Expected:} 403 Forbidden (admin cannot suspend self)
-    \item \textit{Actual:} 404 Not Found (bug found)
-    \item \textit{Justification:} Self-suspension must be explicitly blocked to prevent admin lockout.
-  \end{itemize}
+\item \textbf{test\_ticket\_message\_exceeds\_max} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} message = 1001+ chars
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Message length must be capped.
+\end{itemize}
 
-  \item \textbf{Valid request — admin get coupons}
-  \begin{itemize}[noitemsep]
-    \item \textit{Input:} \texttt{GET /api/v1/admin/coupons}
-    \item \textit{Expected:} 200 OK, list of all coupons
-    \item \textit{Justification:} Admin coupon management must work.
-  \end{itemize}
+\item \textbf{test\_ticket\_view\_all} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/support/tickets}
+  \item \textit{Expected:} 200 OK, list of tickets
+  \item \textit{Justification:} Ticket listing happy path.
+\end{itemize}
 
+\item \textbf{test\_ticket\_update\_status\_backwards} \textit{[Invalid input] \textit{[Bug 13]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{PUT /api/v1/support/tickets/1} | \texttt{\{"status":"IN\_PROGRESS"\}}
+  \item \textit{Expected:} 200 OK
+  \item \textit{Justification:} Ticket status update is a documented endpoint.
+\end{itemize}
+
+\item \textbf{test\_ticket\_view\_nonexistent} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{GET /api/v1/support/tickets/99999}
+  \item \textit{Expected:} 404 Not Found
+  \item \textit{Justification:} Non-existent ticket must return 404.
+\end{itemize}
+\end{enumerate}
+
+\subsection*{\textcolor{blue}{Coupons (TC82--TC86)}}
+\begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
+
+\item \textbf{test\_coupon\_apply\_valid} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Apply valid coupon code
+  \item \textit{Expected:} 200 OK, discount applied
+  \item \textit{Justification:} Core coupon application happy path.
+\end{itemize}
+
+\item \textbf{test\_coupon\_apply\_empty\_code} \textit{[Boundary value] \textit{[Bug 17]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{"code":""}
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Empty coupon code must fail validation.
+\end{itemize}
+
+\item \textbf{test\_coupon\_apply\_expired} \textit{[Invalid input]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Expired coupon code
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Expired coupons must be rejected.
+\end{itemize}
+
+\item \textbf{test\_coupon\_minimum\_cart\_value} \textit{[Boundary value]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} Apply coupon when cart total below minimum
+  \item \textit{Expected:} 400 Bad Request
+  \item \textit{Justification:} Coupons have documented minimum cart value.
+\end{itemize}
+
+\item \textbf{test\_coupon\_remove} \textit{[Valid request]}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{DELETE /api/v1/cart/coupon}
+  \item \textit{Expected:} 200 OK
+  \item \textit{Justification:} Coupon removal must work as documented.
+\end{itemize}
+
+\item \textbf{test\_coupon\_blank\_code} \textit{[Boundary value] \textit{[Bug 17]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} POST with \texttt{"code":""}
+  \item \textit{Expected:} 400 Bad Request (not 404)
+  \item \textit{Justification:} Blank code must return validation error.
+\end{itemize}
+\end{enumerate}
+
+\subsection*{\textcolor{blue}{Admin Actions (TC88--TC93)}}
+\begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
+
+\item \textbf{test\_admin\_suspend\_self} \textit{[Invalid input] \textit{[Bug 18]}}
+\begin{itemize}[noitemsep]
+  \item \textit{Input:} \texttt{POST /api/v1/admin/users/1/suspend}
+  \item \textit{Expected:} 403 Forbidden
+  \item \textit{Justification:} Admin cannot suspend themselves.
+\end{itemize}
 \end{enumerate}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section*{\textcolor{blue}{Bug Reports}}
 
-For every bug found, a detailed report is included below with endpoint, full request details (method, URL, headers, body), expected result, and actual result.
-
 \renewcommand{\labelitemi}{\textcolor{red}{$\blacktriangleright$}}
-\bigskip
 
-% ── Bug 1 ─────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 1: POST /addresses Returns Nested Body Instead of Flat Address}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{POST /api/v1/addresses}
-  \item \textbf{Method:} POST
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/addresses}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, X-User-ID: 1, Content-Type: application/json}
-  \item \textbf{Body:} \texttt{\{"label": "HOME", "street": "123 Main St", "city": "Hyderabad", "pincode": "500001"\}}
-  \item \textbf{Expected result:} Flat address object returned directly: \texttt{\{"address\_id": 1, "label": "HOME", ...\}}
-  \item \textbf{Actual result:} Nested response: \texttt{\{"address": \{...\}, "message": "Address added successfully"\}} — deviates from documented schema causing client integration failures.
+\subsection*{\textcolor{red}{Bug 1: POST /addresses Returns Nested Response}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} POST \texttt{http://localhost:8080/api/v1/addresses}
+  \item \textbf{Headers:} X-Roll-Number: 2024115019, X-User-ID: 1, Content-Type: application/json
+  \item \textbf{Body:} \texttt{\{"label":"HOME","street":"123 Main","city":"Hyd","pincode":"500001"\}}
+  \item \textbf{Expected:} Flat address object \texttt{\{"address\_id":1,...\}}
+  \item \textbf{Actual:} Nested: \texttt{\{"address":\{...\},"message":"Address added"\}}
 \end{itemize}
 
-% ── Bug 2 ─────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 2: PUT /addresses/\{id\} Returns 404 Not Found}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{PUT /api/v1/addresses/\{id\}}
-  \item \textbf{Method:} PUT
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/addresses/1}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, X-User-ID: 1, Content-Type: application/json}
-  \item \textbf{Body:} \texttt{\{"label": "OFFICE", "street": "New Street"\}}
-  \item \textbf{Expected result:} 200 OK, address fields updated.
-  \item \textbf{Actual result:} 404 Not Found — the PUT route is not registered in the server routing table.
+\subsection*{\textcolor{red}{Bug 2: PUT /addresses/\{id\} Returns 404}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} PUT \texttt{http://localhost:8080/api/v1/addresses/1}
+  \item \textbf{Headers:} X-Roll-Number: 2024115019, X-User-ID: 1
+  \item \textbf{Body:} \texttt{\{"street":"New Street"\}}
+  \item \textbf{Expected:} 200 OK, address updated
+  \item \textbf{Actual:} 404 Not Found — PUT route not registered
 \end{itemize}
 
-% ── Bug 3 ─────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 3: POST /cart/add Accepts Quantity = 0}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{POST /api/v1/cart/add}
-  \item \textbf{Method:} POST
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/cart/add}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, X-User-ID: 1, Content-Type: application/json}
-  \item \textbf{Body:} \texttt{\{"product\_id": 1, "quantity": 0\}}
-  \item \textbf{Expected result:} 400 Bad Request — quantity must be $\geq 1$.
-  \item \textbf{Actual result:} 200 OK — zero quantity accepted without validation.
+\subsection*{\textcolor{red}{Bug 3: POST /cart/add Accepts quantity=0}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} POST \texttt{http://localhost:8080/api/v1/cart/add}
+  \item \textbf{Body:} \texttt{\{"product\_id":1,"quantity":0\}}
+  \item \textbf{Expected:} 400 Bad Request
+  \item \textbf{Actual:} 200 OK — zero quantity accepted
 \end{itemize}
 
-% ── Bug 4 ─────────────────────────────────────────────────────────────────────
 \subsection*{\textcolor{red}{Bug 4: POST /cart/add Accepts Negative Quantity}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{POST /api/v1/cart/add}
-  \item \textbf{Method:} POST
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/cart/add}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, X-User-ID: 1, Content-Type: application/json}
-  \item \textbf{Body:} \texttt{\{"product\_id": 1, "quantity": -5\}}
-  \item \textbf{Expected result:} 400 Bad Request — negative quantity is invalid.
-  \item \textbf{Actual result:} 200 OK — negative value accepted, corrupting cart state.
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} POST \texttt{http://localhost:8080/api/v1/cart/add}
+  \item \textbf{Body:} \texttt{\{"product\_id":1,"quantity":-5\}}
+  \item \textbf{Expected:} 400 Bad Request
+  \item \textbf{Actual:} 200 OK — negative quantity accepted
 \end{itemize}
 
-% ── Bug 5 ─────────────────────────────────────────────────────────────────────
 \subsection*{\textcolor{red}{Bug 5: GET /cart Items Missing ``price'' Field}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{GET /api/v1/cart}
-  \item \textbf{Method:} GET
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/cart}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, X-User-ID: 1}
-  \item \textbf{Body:} None (GET request)
-  \item \textbf{Expected result:} 200 OK; each cart item contains \texttt{product\_id, quantity, price, subtotal}.
-  \item \textbf{Actual result:} 200 OK; \texttt{price} field is absent from all cart items — clients cannot compute subtotals independently.
-\end{itemize}
-
-% ── Bug 6 ─────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 6: GET /cart Total is Always 0}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{GET /api/v1/cart}
-  \item \textbf{Method:} GET
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/cart}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, X-User-ID: 1}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} GET \texttt{http://localhost:8080/api/v1/cart}
+  \item \textbf{Headers:} X-Roll-Number: 2024115019, X-User-ID: 1
   \item \textbf{Body:} None
-  \item \textbf{Expected result:} \texttt{"total"} equals the correct sum of all item subtotals.
-  \item \textbf{Actual result:} \texttt{"total": 0} always, regardless of cart contents — checkout and order flow receive incorrect totals.
+  \item \textbf{Expected:} Each item contains \texttt{price} field
+  \item \textbf{Actual:} \texttt{price} absent from all cart items
 \end{itemize}
 
-% ── Bug 7 ─────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 7: POST /products/\{id\}/reviews Permits Rating = 0}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{POST /api/v1/products/1/reviews}
-  \item \textbf{Method:} POST
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/products/1/reviews}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, X-User-ID: 1, Content-Type: application/json}
-  \item \textbf{Body:} \texttt{\{"rating": 0, "comment": "Bad"\}}
-  \item \textbf{Expected result:} 400 Bad Request — rating must be between 1 and 5 inclusive.
-  \item \textbf{Actual result:} 200 OK — zero rating stored without validation.
-\end{itemize}
-
-% ── Bug 8 ─────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 8: POST /products/\{id\}/reviews Permits Rating = 6}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{POST /api/v1/products/1/reviews}
-  \item \textbf{Method:} POST
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/products/1/reviews}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, X-User-ID: 1, Content-Type: application/json}
-  \item \textbf{Body:} \texttt{\{"rating": 6, "comment": "Amazing"\}}
-  \item \textbf{Expected result:} 400 Bad Request — rating must be $\leq 5$.
-  \item \textbf{Actual result:} 200 OK — out-of-range rating accepted and stored.
-\end{itemize}
-
-% ── Bug 9 ─────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 9: GET /admin/orders Omits ``id'' Field From Response}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{GET /api/v1/admin/orders}
-  \item \textbf{Method:} GET
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/admin/orders}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019}
+\subsection*{\textcolor{red}{Bug 6: GET /cart Total Always Returns 0}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} GET \texttt{http://localhost:8080/api/v1/cart}
   \item \textbf{Body:} None
-  \item \textbf{Expected result:} Each order object includes an \texttt{id} field.
-  \item \textbf{Actual result:} \texttt{id} field is absent from all orders — downstream invoice generation breaks.
+  \item \textbf{Expected:} \texttt{total} = correct sum of subtotals
+  \item \textbf{Actual:} \texttt{"total":0} always
 \end{itemize}
 
-% ── Bug 10 ────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 10: GET /orders/\{id\}/invoice Fails Due to Missing Order ID (Derived from Bug 9)}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{GET /api/v1/orders/\{id\}/invoice}
-  \item \textbf{Method:} GET
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/orders/1/invoice}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, X-User-ID: 1}
+\subsection*{\textcolor{red}{Bug 7: POST /reviews Permits rating=0}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} POST \texttt{http://localhost:8080/api/v1/products/1/reviews}
+  \item \textbf{Body:} \texttt{\{"rating":0,"comment":"Bad"\}}
+  \item \textbf{Expected:} 400 Bad Request
+  \item \textbf{Actual:} 200 OK
+\end{itemize}
+
+\subsection*{\textcolor{red}{Bug 8: POST /reviews Permits rating=6}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} POST \texttt{http://localhost:8080/api/v1/products/1/reviews}
+  \item \textbf{Body:} \texttt{\{"rating":6,"comment":"OK"\}}
+  \item \textbf{Expected:} 400 Bad Request
+  \item \textbf{Actual:} 200 OK
+\end{itemize}
+
+\subsection*{\textcolor{red}{Bug 9: GET /admin/orders Missing ``id'' Field}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} GET \texttt{http://localhost:8080/api/v1/admin/orders}
   \item \textbf{Body:} None
-  \item \textbf{Expected result:} 200 OK with invoice object containing order total and item breakdown.
-  \item \textbf{Actual result:} Fails at runtime — order IDs are not available because Bug 9 strips \texttt{id} from the order schema.
+  \item \textbf{Expected:} Each order has \texttt{id} field
+  \item \textbf{Actual:} \texttt{id} absent from all orders
 \end{itemize}
 
-% ── Bug 11 ────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 11: GET /products Accepts Unknown Sort Keys Without Validation}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{GET /api/v1/products}
-  \item \textbf{Method:} GET
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/products?sort=random}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019}
-  \item \textbf{Body:} None
-  \item \textbf{Expected result:} 400 Bad Request — \texttt{random} is not a valid sort key.
-  \item \textbf{Actual result:} 200 OK — unknown sort key silently bypasses validation.
+\subsection*{\textcolor{red}{Bug 10: GET /orders/\{id\}/invoice Fails (Derived from Bug 9)}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} GET \texttt{http://localhost:8080/api/v1/orders/1/invoice}
+  \item \textbf{Expected:} 200 OK with invoice
+  \item \textbf{Actual:} Fails at runtime — order IDs not persisted
 \end{itemize}
 
-% ── Bug 12 ────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 12: GET /products/\{id\}/reviews Returns 200 for Non-Existent Product}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{GET /api/v1/products/99999/reviews}
-  \item \textbf{Method:} GET
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/products/99999/reviews}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019}
-  \item \textbf{Body:} None
-  \item \textbf{Expected result:} 404 Not Found — product ID 99999 does not exist.
-  \item \textbf{Actual result:} 200 OK with empty array — product ID is not validated.
+\subsection*{\textcolor{red}{Bug 11: GET /products Accepts Unknown sort Keys}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} GET \texttt{http://localhost:8080/api/v1/products?sort=random}
+  \item \textbf{Expected:} 400 Bad Request
+  \item \textbf{Actual:} 200 OK — unknown sort key silently ignored
 \end{itemize}
 
-% ── Bug 13 ────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 13: PUT /support/tickets/\{id\} Returns Universal 404}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{PUT /api/v1/support/tickets/\{id\}}
-  \item \textbf{Method:} PUT
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/support/tickets/1}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, X-User-ID: 1, Content-Type: application/json}
-  \item \textbf{Body:} \texttt{\{"status": "IN\_PROGRESS"\}}
-  \item \textbf{Expected result:} 200 OK, ticket status updated.
-  \item \textbf{Actual result:} 404 Not Found — PUT route is entirely unmapped on the server.
+\subsection*{\textcolor{red}{Bug 12: GET /products/99999/reviews Returns 200}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} GET \texttt{http://localhost:8080/api/v1/products/99999/reviews}
+  \item \textbf{Expected:} 404 Not Found
+  \item \textbf{Actual:} 200 OK with empty array
 \end{itemize}
 
-% ── Bug 14 ────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 14: POST /auth/login with Empty Body Returns 404}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{POST /api/v1/auth/login}
-  \item \textbf{Method:} POST
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/auth/login}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, Content-Type: application/json}
+\subsection*{\textcolor{red}{Bug 13: PUT /support/tickets/\{id\} Returns 404}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} PUT \texttt{http://localhost:8080/api/v1/support/tickets/1}
+  \item \textbf{Body:} \texttt{\{"status":"IN\_PROGRESS"\}}
+  \item \textbf{Expected:} 200 OK
+  \item \textbf{Actual:} 404 Not Found — endpoint unmapped
+\end{itemize}
+
+\subsection*{\textcolor{red}{Bug 14: POST /auth/login Empty Body Returns 404}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} POST \texttt{http://localhost:8080/api/v1/auth/login}
   \item \textbf{Body:} \texttt{\{\}}
-  \item \textbf{Expected result:} 400 Bad Request — email and password are required fields.
-  \item \textbf{Actual result:} 404 Not Found — server routing breaks on missing schema binding instead of returning a validation error.
+  \item \textbf{Expected:} 400 Bad Request
+  \item \textbf{Actual:} 404 Not Found
 \end{itemize}
 
-% ── Bug 15 ────────────────────────────────────────────────────────────────────
 \subsection*{\textcolor{red}{Bug 15: PUT /profile Permits Role Injection}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{PUT /api/v1/profile}
-  \item \textbf{Method:} PUT
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/profile}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, X-User-ID: 1, Content-Type: application/json}
-  \item \textbf{Body:} \texttt{\{"name": "Attacker", "phone": "1234567890", "role": "admin"\}}
-  \item \textbf{Expected result:} 400 Bad Request or response strips \texttt{role} field silently.
-  \item \textbf{Actual result:} 200 OK — \texttt{role} is accepted without rejection, enabling potential privilege escalation.
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} PUT \texttt{http://localhost:8080/api/v1/profile}
+  \item \textbf{Body:} \texttt{\{"name":"X","phone":"1234567890","role":"admin"\}}
+  \item \textbf{Expected:} 400 or role field silently dropped
+  \item \textbf{Actual:} 200 OK — role accepted
 \end{itemize}
 
-% ── Bug 16 ────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 16: POST /products/\{id\}/reviews Accepts Reviews Without Purchase Verification}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{POST /api/v1/products/2/reviews}
-  \item \textbf{Method:} POST
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/products/2/reviews}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, X-User-ID: 1, Content-Type: application/json}
-  \item \textbf{Body:} \texttt{\{"rating": 5, "comment": "Never bought this product"\}}
-  \item \textbf{Expected result:} 403 Forbidden — user has not purchased this product.
-  \item \textbf{Actual result:} 200 OK — review published with no purchase history check.
+\subsection*{\textcolor{red}{Bug 16: POST /reviews Accepts Without Purchase}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} POST \texttt{http://localhost:8080/api/v1/products/2/reviews}
+  \item \textbf{Body:} \texttt{\{"rating":5,"comment":"Never bought"\}}
+  \item \textbf{Expected:} 403 Forbidden
+  \item \textbf{Actual:} 200 OK
 \end{itemize}
 
-% ── Bug 17 ────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 17: POST /cart/coupon with Blank Code Returns 404}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{POST /api/v1/cart/coupon}
-  \item \textbf{Method:} POST
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/cart/coupon}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, X-User-ID: 1, Content-Type: application/json}
-  \item \textbf{Body:} \texttt{\{"code": ""\}}
-  \item \textbf{Expected result:} 400 Bad Request — empty coupon code is invalid.
-  \item \textbf{Actual result:} 404 Not Found — blank code routes to a missing lookup path instead of returning a validation error.
+\subsection*{\textcolor{red}{Bug 17: POST /cart/coupon Blank Code Returns 404}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} POST \texttt{http://localhost:8080/api/v1/cart/coupon}
+  \item \textbf{Body:} \texttt{\{"code":""\}}
+  \item \textbf{Expected:} 400 Bad Request
+  \item \textbf{Actual:} 404 Not Found
 \end{itemize}
 
-% ── Bug 18 ────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 18: POST /admin/users/1/suspend Returns 404 Instead of 403}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{POST /api/v1/admin/users/1/suspend}
-  \item \textbf{Method:} POST
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/admin/users/1/suspend}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019}
+\subsection*{\textcolor{red}{Bug 18: POST /admin/users/1/suspend Returns 404}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} POST \texttt{http://localhost:8080/api/v1/admin/users/1/suspend}
   \item \textbf{Body:} None
-  \item \textbf{Expected result:} 403 Forbidden — admin cannot suspend themselves.
-  \item \textbf{Actual result:} 404 Not Found — endpoint is not correctly mapped; self-suspension logic is absent.
+  \item \textbf{Expected:} 403 Forbidden
+  \item \textbf{Actual:} 404 Not Found
 \end{itemize}
 
-% ── Bug 19 ────────────────────────────────────────────────────────────────────
-\subsection*{\textcolor{red}{Bug 19: PUT /admin/orders/1/status Accepts Invalid Enum Values}}
-\begin{itemize}
-  \item \textbf{Endpoint:} \texttt{PUT /api/v1/admin/orders/1/status}
-  \item \textbf{Method:} PUT
-  \item \textbf{URL:} \texttt{http://localhost:8080/api/v1/admin/orders/1/status}
-  \item \textbf{Headers:} \texttt{X-Roll-Number: 2024115019, Content-Type: application/json}
-  \item \textbf{Body:} \texttt{\{"status": "MAGIC\_STATE"\}}
-  \item \textbf{Expected result:} 400 Bad Request — \texttt{MAGIC\_STATE} is not a valid order status enum.
-  \item \textbf{Actual result:} 404 Not Found — route mapping is broken; enum validation never executes.
+\subsection*{\textcolor{red}{Bug 19: PUT /admin/orders/status Accepts Invalid Enum}}
+\begin{itemize}[noitemsep]
+  \item \textbf{Method/URL:} PUT \texttt{http://localhost:8080/api/v1/admin/orders/1/status}
+  \item \textbf{Body:} \texttt{\{"status":"MAGIC\_STATE"\}}
+  \item \textbf{Expected:} 400 Bad Request
+  \item \textbf{Actual:} 404 Not Found
 \end{itemize}
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section*{\textcolor{blue}{Testing Coverage Summary}}
+\section*{\textcolor{blue}{Coverage Summary}}
 
 \begin{center}
 \begin{tabular}{lcc}
 \toprule
 Category & Test Cases & Bugs Found \\
 \midrule
-Valid requests & 20 & 0 \\
-Invalid inputs & 28 & 8 (Bugs 9,10,11,12,16,17,18,19) \\
-Missing fields & 15 & 1 (Bug 14) \\
-Wrong data types & 14 & 0 \\
-Boundary values & 16 & 6 (Bugs 3,4,7,8,1,2) \\
+Valid requests & 22 & 0 \\
+Invalid inputs & 26 & 8 \\
+Missing fields & 10 & 1 \\
+Wrong data types & 9 & 0 \\
+Boundary values & 26 & 10 \\
 \midrule
 \textbf{Total} & \textbf{93} & \textbf{19} \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\vspace{0.5em}
-\noindent \textbf{Result:} 74 tests passing, 19 bugs found and documented. Each bug report includes the full request details (method, URL, headers, body), expected result from the API spec, and the actual result observed.
-
 \section*{\textcolor{blue}{Conclusion}}
-The black-box testing reveals 19 bugs spanning input validation failures (Bugs 3, 4, 7, 8), missing response fields (Bugs 5, 9), incorrect HTTP status codes (Bugs 11, 12, 13, 14, 18, 19), structural response deviations (Bugs 1, 2), and security concerns (Bugs 15, 16). All tests were automated using \texttt{pytest} and \texttt{requests} against the live Docker API.
+Black-box testing exposed 19 bugs: input validation failures (Bugs 3,4,7,8), missing response fields (Bugs 5,9), wrong status codes (Bugs 11,12,13,14,18,19), structural deviations (Bugs 1,2), and security issues (Bugs 15,16). All 93 tests automated with \texttt{pytest} and \texttt{requests}.
 
 \end{document}

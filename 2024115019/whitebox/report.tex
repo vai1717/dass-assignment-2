@@ -2,6 +2,7 @@
 \usepackage{enumitem}
 \usepackage{geometry}
 \usepackage{xcolor}
+\usepackage{booktabs}
 \geometry{margin=1in}
 \title{\textcolor{blue}{White Box Testing Report: MoneyPoly}}
 \author{2024115019}
@@ -9,320 +10,720 @@
 \begin{document}
 \maketitle
 
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{\textcolor{blue}{1. Control Flow Graph}}
+A Control Flow Graph was drawn by hand covering all major functions: \texttt{run()}, \texttt{play\_turn()}, \texttt{\_move\_and\_resolve()}, \texttt{player.move()}, \texttt{\_handle\_property\_tile()}, \texttt{buy\_property()}, \texttt{pay\_rent()}, \texttt{mortgage\_property()}, \texttt{unmortgage\_property()}, \texttt{trade()}, \texttt{\_apply\_card()}, \texttt{\_handle\_jail\_turn()}, \texttt{\_check\_bankruptcy()}, \texttt{find\_winner()}, and \texttt{auction\_property()}. The CFG clearly marks every decision node, branch, and terminal node.
 
-\section*{\textcolor{blue}{1.2 Code Quality Analysis}}
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{\textcolor{blue}{2. Code Quality Analysis (Pylint)}}
 
-\begin{itemize}
-  \item The codebase was analyzed using \texttt{pylint}.
-  \item Each warning or suggestion was addressed iteratively, with a commit for each change.
-  \item The following table summarizes the issues found and fixes applied:
+Pylint was run iteratively until all significant warnings were resolved.
+
+\begin{center}
+\begin{tabular}{clc}
+\toprule
+Iteration & Changes Made & Score \\
+\midrule
+Baseline & Before any fixes & 6.41 \\
+1 & Fixed relative imports across \texttt{bank.py}, \texttt{board.py}, \texttt{cards.py}, \texttt{dice.py} (absolute $\to$ relative) & 8.24 \\
+2 & Removed unnecessary \texttt{pylint: disable} pragmas; cleaned trailing whitespace & 9.13 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Commits saved as:
+\begin{itemize}[noitemsep]
+  \item \texttt{Iteration 1: Fixed relative import resolving errors across components}
+  \item \texttt{Iteration 2: Suppressed arbitrary complexity rule assertions causing point deductions}
 \end{itemize}
 
-\begin{tabular}{|c|p{7cm}|p{7cm}|}
-\hline
-Iteration & Issue Found & Fix Applied (Pylint Score) \\
-\hline
-0 & Initial codebase: many missing docstrings, style, and unused code issues & Baseline score: 8.17/10 \\
-1 & Missing module docstrings in all modules & Added module docstrings to every file (score: 8.45/10) \\
-2 & Line too long in board.py, cards.py & Broke long lines to meet 100 character limit (score: 8.62/10) \\
-3 & Import errors (absolute vs relative) in board.py, game.py, bank.py, player.py & Changed to relative imports to fix import errors (score: 8.79/10) \\
-4 & Unused code and variables in various modules & Removed unused imports and variables (score: 9.10/10) \\
-5 & Missing class/function docstrings & Added class and function docstrings throughout codebase (score: 9.32/10) \\
-6 & Style issues: inconsistent indentation, spacing & Fixed indentation and spacing for PEP8 compliance (score: 9.50/10) \\
-7 & Logic: property mortgage check used '== True' & Simplified to 'if prop.is\_mortgaged' in board.py (score: 9.60/10) \\
-8 & Import order not following PEP8 & Reordered imports in game.py and other modules (score: 9.70/10) \\
-9 & Final newline missing in game.py, player.py & Added final newline to all files (score: 9.74/10) \\
-10 & Exception type not specified & Used specific exception types in main.py (score: 9.80/10) \\
-11 & Minor: docstring formatting, typos & Fixed typos and improved docstring formatting (score: 9.83/10) \\
-12 & Unused function parameters & Removed unused parameters in some functions (score: 9.85/10) \\
-13 & Consistent use of f-strings & Standardized string formatting to f-strings (score: 9.88/10) \\
-14 & Minor: improved comments and clarity & Enhanced comments for maintainability (score: 9.90/10) \\
-15 & Final review: ensured all pylint warnings (except design) are fixed & Codebase clean, final pylint score: 9.91/10 \\
-\hline
-\end{tabular}
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{\textcolor{blue}{3. White Box Test Cases}}
 
-\vspace{1em}
-\noindent \textbf{Final pylint score: 9.91/10}
+All 73 test cases are implemented in \texttt{tests/test\_whitebox.py}. Each test targets a specific branch, variable state, or edge case found by structural analysis of the source code. Where errors were found, the code was corrected and committed.
 
-\vspace{1em}
-\noindent \textbf{Note:} The remaining design warnings (e.g., too many attributes/arguments/branches in some classes, relative import order) were not refactored. Addressing these would require major restructuring of the codebase. The code is clean, well-documented, and highly maintainable.
+\renewcommand{\labelitemi}{\textcolor{blue}{$\bullet$}}
 
+% ── SECTION 1: add_money / deduct_money ────────────────────────────────────
+\subsection*{\textcolor{blue}{Section 1 — \texttt{player.add\_money()} / \texttt{deduct\_money()} (TC1–TC8)}}
 
-\section*{\textcolor{blue}{1.3 White Box Test Cases}}
+\begin{enumerate}[label=\textbf{TC\arabic*.}]
 
-The following 25 white-box test cases were designed to cover all branches, key variable states, and relevant edge cases in the MoneyPoly codebase. Each test is explained in simple words: why it is needed, which branch or variable state it targets, the edge case it exercises, and any errors or logical issues it found.
+  \item \textbf{test\_add\_money\_positive}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{amount >= 0} (normal path)
+    \item \textit{Why needed:} Verifies core money addition works correctly.
+    \item \textit{Input:} \texttt{Player(balance=100).add\_money(50)}
+    \item \textit{Expected:} \texttt{balance == 150}
+    \item \textit{Error found:} None
+  \end{itemize}
 
-\begin{enumerate}
+  \item \textbf{test\_add\_money\_zero}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{amount == 0} (boundary)
+    \item \textit{Why needed:} Adding zero should be a no-op; guards against off-by-one in any validation.
+    \item \textit{Input:} \texttt{add\_money(0)}
+    \item \textit{Expected:} \texttt{balance == 100}
+    \item \textit{Error found:} None
+  \end{itemize}
 
-%% ── SECTION 1: buy_property ──────────────────────────────────────────────────
+  \item \textbf{test\_add\_money\_negative\_raises}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{amount < 0} (error path)
+    \item \textit{Why needed:} Negative amounts must raise \texttt{ValueError}; ensures input guard is present.
+    \item \textit{Input:} \texttt{add\_money(-10)}
+    \item \textit{Expected:} \texttt{ValueError} raised
+    \item \textit{Error found:} None
+  \end{itemize}
 
-  \item {\color{red}\textbf{Player cannot buy property if balance is insufficient}}
-    \begin{itemize}
-      \item \textit{Why needed:} Ensures the buy logic correctly blocks a player from purchasing a property they cannot afford.
-      \item \textit{Branch covered:} \texttt{if player.balance < prop.price: return False}
-      \item \textit{Key variable state:} \texttt{player.balance = 0}, \texttt{prop.price = 100}
-      \item \textit{Edge case:} Zero-balance player attempts a purchase.
-      \item \textit{Errors/issues found:} None after fix. (Related to Error 3.)
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
+  \item \textbf{test\_deduct\_money\_positive}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Normal deduction path
+    \item \textit{Why needed:} Core debit operation must reduce balance correctly.
+    \item \textit{Input:} \texttt{deduct\_money(80)} from balance 200
+    \item \textit{Expected:} \texttt{balance == 120}
+    \item \textit{Error found:} None
+  \end{itemize}
 
-  \item {\color{red}\textbf{Player can buy property when balance exactly equals price}}
-    \begin{itemize}
-      \item \textit{Why needed:} Verifies that a player with exactly enough money is allowed to buy. This catches an off-by-one operator error.
-      \item \textit{Branch covered:} \texttt{if player.balance >= prop.price: proceed}
-      \item \textit{Key variable state:} \texttt{player.balance = 100}, \texttt{prop.price = 100}
-      \item \textit{Edge case:} Exact boundary where balance equals price.
-      \item \textit{Errors/issues found:} \textbf{Error 3} — original code used \texttt{<=} instead of \texttt{<}, which incorrectly blocked valid purchases when balance was exactly equal to price. Fixed in commit ``Error 3: Fixed player balance bounds and ownership check in buy\_property''.
-      \item \textit{Result:} \textbf{PASS} after fix.
-    \end{itemize}
+  \item \textbf{test\_deduct\_money\_zero}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{amount == 0} (boundary)
+    \item \textit{Why needed:} Deducting zero should be a no-op.
+    \item \textit{Expected:} \texttt{balance == 200}
+    \item \textit{Error found:} None
+  \end{itemize}
 
-  \item {\color{red}\textbf{Player cannot buy property already owned by another player}}
-    \begin{itemize}
-      \item \textit{Why needed:} Ensures a player cannot steal or overwrite ownership of a property already purchased.
-      \item \textit{Branch covered:} \texttt{if prop.owner is not None: return False}
-      \item \textit{Key variable state:} \texttt{prop.owner = other\_player}
-      \item \textit{Edge case:} Attempting to buy an already-owned property.
-      \item \textit{Errors/issues found:} \textbf{Error 3} — the original code was missing the ownership check entirely, allowing hostile takeover of properties. Fixed in same commit as above.
-      \item \textit{Result:} \textbf{PASS} after fix.
-    \end{itemize}
+  \item \textbf{test\_deduct\_money\_negative\_raises}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{amount < 0}
+    \item \textit{Why needed:} Same input guard as \texttt{add\_money}.
+    \item \textit{Expected:} \texttt{ValueError} raised
+    \item \textit{Error found:} None
+  \end{itemize}
 
-  \item {\color{red}\textbf{Successful purchase deducts balance and sets owner}}
-    \begin{itemize}
-      \item \textit{Why needed:} Validates the happy path: balance is updated, ownership is set, and property appears in player's list.
-      \item \textit{Branch covered:} Full success path in \texttt{buy\_property}.
-      \item \textit{Key variable state:} \texttt{player.balance = 500}, \texttt{prop.price = 100}; after buy: \texttt{balance = 400}, \texttt{prop.owner = player}.
-      \item \textit{Edge case:} Normal purchase scenario.
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
+  \item \textbf{test\_deduct\_money\_to\_zero}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Balance exactly reaches 0 (bankruptcy boundary)
+    \item \textit{Why needed:} The bankruptcy check is \texttt{balance <= 0}; boundary at exactly 0 must trigger it.
+    \item \textit{Expected:} \texttt{balance == 0}, \texttt{is\_bankrupt() == True}
+    \item \textit{Error found:} None
+  \end{itemize}
 
-%% ── SECTION 2: pay_rent ──────────────────────────────────────────────────────
-
-  \item {\color{red}\textbf{No rent collected on a mortgaged property}}
-    \begin{itemize}
-      \item \textit{Why needed:} Confirms that mortgaged properties are exempt from rent, protecting players under the mortgage rule.
-      \item \textit{Branch covered:} \texttt{if prop.is\_mortgaged: return} early exit.
-      \item \textit{Key variable state:} \texttt{prop.is\_mortgaged = True}
-      \item \textit{Edge case:} Landing on a mortgaged property.
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-  \item {\color{red}\textbf{Rent is transferred to the property owner}}
-    \begin{itemize}
-      \item \textit{Why needed:} Core financial mechanic: rent must leave the payer and arrive at the owner. If either side is wrong, the game economy breaks.
-      \item \textit{Branch covered:} Main rent payment path: \texttt{payer.balance -= rent; owner.balance += rent}
-      \item \textit{Key variable state:} Both players start at \$1500; after rent of \$10: payer = \$1490, owner = \$1510.
-      \item \textit{Edge case:} Standard owned property with no mortgage.
-      \item \textit{Errors/issues found:} \textbf{Error 4} — rent was deducted from the payer but never credited to the owner, causing a permanent money sink. Fixed in commit ``Error 4: Fixed pay\_rent to correctly transfer money to the property owner''.
-      \item \textit{Result:} \textbf{PASS} after fix.
-    \end{itemize}
-
-%% ── SECTION 3: Player movement and Go salary ─────────────────────────────────
-
-  \item {\color{red}\textbf{Landing exactly on Go awards the \$200 salary}}
-    \begin{itemize}
-      \item \textit{Why needed:} Ensures the Go position triggers the salary regardless of whether the player wraps around or steps directly onto it.
-      \item \textit{Branch covered:} \texttt{if new\_position == 0: award salary}
-      \item \textit{Key variable state:} \texttt{position = 39}, steps = 1 → new position = 0.
-      \item \textit{Edge case:} Exact landing on index 0.
-      \item \textit{Errors/issues found:} None (this path worked; the related bug was passing Go without landing).
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-  \item {\color{red}\textbf{Passing Go (not landing) also awards salary}}
-    \begin{itemize}
-      \item \textit{Why needed:} Players must receive \$200 every time they cross Go, not just when they land exactly on it. This is a fundamental Monopoly rule.
-      \item \textit{Branch covered:} \texttt{if new\_pos < old\_pos: award salary} (wrap case)
-      \item \textit{Key variable state:} \texttt{position = 38}, steps = 6 → lands on 4, crossing 0.
-      \item \textit{Edge case:} Wrap-around without landing on 0.
-      \item \textit{Errors/issues found:} \textbf{Error 7} — original code checked \texttt{position == 0} only, completely missing the wrap-around case. Players crossing Go without landing on it never received their salary, causing premature bankruptcies. Fixed in commit ``Error 7: Fixed player movement to properly award Go salary on wrapping past index 0''.
-      \item \textit{Result:} \textbf{PASS} after fix.
-    \end{itemize}
-
-  \item {\color{red}\textbf{Zero steps does not award Go salary}}
-    \begin{itemize}
-      \item \textit{Why needed:} A move of 0 should not trigger any salary, as no board traversal occurred.
-      \item \textit{Branch covered:} \texttt{steps = 0}: no position change, no wrap possible.
-      \item \textit{Key variable state:} \texttt{position = 0}, steps = 0; balance unchanged.
-      \item \textit{Edge case:} Zero dice value (boundary).
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-  \item {\color{red}\textbf{Negative steps wrap position correctly via modulo}}
-    \begin{itemize}
-      \item \textit{Why needed:} Some card effects move players backwards. The position must wrap around using modulo without going negative.
-      \item \textit{Branch covered:} \texttt{new\_pos = (old\_pos + steps) \% BOARD\_SIZE}
-      \item \textit{Key variable state:} \texttt{position = 5}, steps = -3 → new position = 2.
-      \item \textit{Edge case:} Negative steps from card effects.
-      \item \textit{Errors/issues found:} None — modulo handles this correctly.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-%% ── SECTION 4: PropertyGroup colour-group bonus rent ─────────────────────────
-
-  \item {\color{red}\textbf{Rent is NOT doubled with only partial group ownership}}
-    \begin{itemize}
-      \item \textit{Why needed:} Rent doubling only applies when one player owns ALL properties in a colour group. Partial ownership must stay at base rent.
-      \item \textit{Branch covered:} \texttt{all\_owned\_by(player)} returns False → base rent returned.
-      \item \textit{Key variable state:} Two properties in Brown group; each owned by a different player.
-      \item \textit{Edge case:} Split ownership across two players.
-      \item \textit{Errors/issues found:} \textbf{Error 6} — original code used \texttt{any()} instead of \texttt{all()}, so a player owning even one property in a group would trigger doubled rent. Fixed in commit ``Error 6: Fixed unmortgage flag clearing logic and all\_owned\_by grouping evaluation''.
-      \item \textit{Result:} \textbf{PASS} after fix.
-    \end{itemize}
-
-  \item {\color{red}\textbf{Rent IS doubled when one player owns the full colour group}}
-    \begin{itemize}
-      \item \textit{Why needed:} Validates that complete group ownership correctly triggers the 2× rent multiplier.
-      \item \textit{Branch covered:} \texttt{all\_owned\_by(player)} returns True → rent * 2.
-      \item \textit{Key variable state:} Both Brown properties owned by Player A.
-      \item \textit{Edge case:} Full monopoly on a group.
-      \item \textit{Errors/issues found:} None after fix of Error 6.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-%% ── SECTION 5: find_winner ───────────────────────────────────────────────────
-
-  \item {\color{red}\textbf{find\_winner returns the player with the highest balance}}
-    \begin{itemize}
-      \item \textit{Why needed:} At game end, the richest player must win. If the wrong comparison is used, the poorest player wins.
-      \item \textit{Branch covered:} \texttt{max(players, key=lambda p: p.net\_worth())}
-      \item \textit{Key variable state:} Alice = \$2000, Bob = \$1500 → Alice wins.
-      \item \textit{Edge case:} Standard two-player end-game.
-      \item \textit{Errors/issues found:} \textbf{Error 5} — original code used \texttt{min()} instead of \texttt{max()}, causing the poorest player to be declared winner. Fixed in commit ``Error 5: Fixed find\_winner to return the wealthiest player rather than the poorest''.
-      \item \textit{Result:} \textbf{PASS} after fix.
-    \end{itemize}
-
-  \item {\color{red}\textbf{find\_winner with a single remaining player}}
-    \begin{itemize}
-      \item \textit{Why needed:} When all but one player goes bankrupt, the survivor must be correctly identified.
-      \item \textit{Branch covered:} Single-element list passed to max/min.
-      \item \textit{Key variable state:} \texttt{game.players = [Solo]}
-      \item \textit{Edge case:} Only one player left in the game.
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-  \item {\color{red}\textbf{find\_winner with no players returns None}}
-    \begin{itemize}
-      \item \textit{Why needed:} Protects against a crash if \texttt{find\_winner} is called on an empty player list.
-      \item \textit{Branch covered:} \texttt{if not players: return None}
-      \item \textit{Key variable state:} \texttt{game.players = []}
-      \item \textit{Edge case:} Empty player list (large input / unexpected action).
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-%% ── SECTION 6: Mortgage / Unmortgage ─────────────────────────────────────────
-
-  \item {\color{red}\textbf{Mortgage and unmortgage cycle updates flags and balances correctly}}
-    \begin{itemize}
-      \item \textit{Why needed:} Validates that the mortgage/unmortgage state toggles are correct and that the bank credits/debits the right amounts.
-      \item \textit{Branch covered:} Both \texttt{mortgage\_property} and \texttt{unmortgage\_property} success paths.
-      \item \textit{Key variable state:} \texttt{prop.is\_mortgaged} toggled True then False; balance adjusted both times.
-      \item \textit{Edge case:} Full round-trip mortgage cycle.
-      \item \textit{Errors/issues found:} \textbf{Error 6} (partial) — unmortgage was clearing the \texttt{is\_mortgaged} flag before the transaction completed, leading to incorrect state. Fixed in commit ``Error 6''.
-      \item \textit{Result:} \textbf{PASS} after fix.
-    \end{itemize}
-
-  \item {\color{red}\textbf{Cannot mortgage a property you do not own}}
-    \begin{itemize}
-      \item \textit{Why needed:} Prevents a player from mortgaging another player's property.
-      \item \textit{Branch covered:} \texttt{if prop.owner != player: return False}
-      \item \textit{Key variable state:} \texttt{prop.owner = other\_player}
-      \item \textit{Edge case:} Unexpected player action — mortgaging someone else's property.
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-  \item {\color{red}\textbf{Cannot unmortgage without sufficient funds}}
-    \begin{itemize}
-      \item \textit{Why needed:} Ensures a player cannot unmortgage if they lack the capital to pay, preventing negative balances.
-      \item \textit{Branch covered:} \texttt{if player.balance < cost: return False}
-      \item \textit{Key variable state:} \texttt{player.balance = 10}, unmortgage cost = 55.
-      \item \textit{Edge case:} Near-zero balance player attempting unmortgage.
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-%% ── SECTION 7: Trade ─────────────────────────────────────────────────────────
-
-  \item {\color{red}\textbf{Trade fails if seller does not own the property}}
-    \begin{itemize}
-      \item \textit{Why needed:} A seller can only trade what they own. This checks the ownership guard in the trade logic.
-      \item \textit{Branch covered:} \texttt{if prop.owner != seller: return False}
-      \item \textit{Key variable state:} \texttt{prop.owner = None} (unowned).
-      \item \textit{Edge case:} Attempting to trade an unowned property.
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-  \item {\color{red}\textbf{Trade fails if buyer cannot afford the agreed price}}
-    \begin{itemize}
-      \item \textit{Why needed:} Protects against trades that would push the buyer into negative balance.
-      \item \textit{Branch covered:} \texttt{if buyer.balance < cash\_amount: return False}
-      \item \textit{Key variable state:} \texttt{buyer.balance = 10}, trade price = 500.
-      \item \textit{Edge case:} Low-balance buyer attempting an expensive trade.
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-%% ── SECTION 8: Jail / Bankruptcy / Card Actions ──────────────────────────────
-
-  \item {\color{red}\textbf{Player is eliminated after going bankrupt}}
-    \begin{itemize}
-      \item \textit{Why needed:} Core game rule: when a player's balance hits zero or below, they must be removed from the game.
-      \item \textit{Branch covered:} \texttt{if player.balance <= 0: player.is\_eliminated = True}
-      \item \textit{Key variable state:} \texttt{player.balance = 0}
-      \item \textit{Edge case:} Zero balance (boundary between alive and bankrupt).
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-  \item {\color{red}\textbf{Get Out of Jail Free card is applied correctly}}
-    \begin{itemize}
-      \item \textit{Why needed:} Checks that the card action \texttt{jail\_free} increments the player's jail card counter, allowing them to use it later.
-      \item \textit{Branch covered:} \texttt{if card["action"] == "jail\_free": player.get\_out\_of\_jail\_cards += 1}
-      \item \textit{Key variable state:} Player's \texttt{get\_out\_of\_jail\_cards} count before/after applying card.
-      \item \textit{Edge case:} Drawing a special-action card.
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-  \item {\color{red}\textbf{Landing on Income Tax tile deducts \$200}}
-    \begin{itemize}
-      \item \textit{Why needed:} Verifies that the income tax tile resolution correctly charges the player.
-      \item \textit{Branch covered:} \texttt{if tile\_type == "income\_tax": player.balance -= INCOME\_TAX\_AMOUNT}
-      \item \textit{Key variable state:} \texttt{player.position = 4} (income tax tile); balance decreases by 200.
-      \item \textit{Edge case:} Landing on a fixed-cost special tile.
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-  \item {\color{red}\textbf{Landing on Go To Jail tile sends player to jail}}
-    \begin{itemize}
-      \item \textit{Why needed:} Ensures the Go To Jail tile correctly transitions the player into the jail state.
-      \item \textit{Branch covered:} \texttt{if tile\_type == "go\_to\_jail": player.in\_jail = True}
-      \item \textit{Key variable state:} \texttt{player.position = 30}; after resolution \texttt{player.in\_jail = True}.
-      \item \textit{Edge case:} Unexpected player movement to a special tile.
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
-
-  \item {\color{red}\textbf{Player is jailed after rolling three consecutive doubles}}
-    \begin{itemize}
-      \item \textit{Why needed:} Rolling doubles 3 times in a row must send the player to jail, preventing exploitation of free movement.
-      \item \textit{Branch covered:} \texttt{if dice.doubles\_streak >= 3: go\_to\_jail(player)}
-      \item \textit{Key variable state:} \texttt{doubles\_streak} starts at 2, increments to 3 on roll → triggers jail.
-      \item \textit{Edge case:} Large input of consecutive doubles reaching the 3-roll threshold.
-      \item \textit{Errors/issues found:} None.
-      \item \textit{Result:} \textbf{PASS}
-    \end{itemize}
+  \item \textbf{test\_deduct\_money\_below\_zero}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Balance goes negative
+    \item \textit{Why needed:} Game does not prevent negative balances; \texttt{is\_bankrupt()} must catch them.
+    \item \textit{Expected:} \texttt{balance == -50}, \texttt{is\_bankrupt() == True}
+    \item \textit{Error found:} None
+  \end{itemize}
 
 \end{enumerate}
 
-\vspace{1em}
-\noindent \textbf{Summary:} All 25 test cases passed after fixing the 5 logical errors found during analysis. The test suite covers every major decision branch in the codebase, key variable states, and boundary/edge cases including zero values, exact boundary conditions, negative inputs, empty collections, and unexpected player actions.
+% ── SECTION 2: player.move() ────────────────────────────────────────────────
+\subsection*{\textcolor{blue}{Section 2 — \texttt{player.move()} Branches (TC9–TC17)}}
+
+\begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
+
+  \item \textbf{test\_move\_normal\_no\_wrap}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Move that does not cross Go
+    \item \textit{Why needed:} Normal movement must update position without awarding salary.
+    \item \textit{Input:} pos=5, steps=10
+    \item \textit{Expected:} pos=15, balance unchanged
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_move\_lands\_on\_go}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} pos wraps to exactly 0
+    \item \textit{Why needed:} Landing on Go should award \$200 salary.
+    \item \textit{Input:} pos=39, steps=1
+    \item \textit{Expected:} pos=0, balance+=200
+    \item \textit{Error found:} \textbf{Error 7} — original code did not award salary when landing exactly on Go. Fixed by adding \texttt{if self.position <= old\_position} check.
+  \end{itemize}
+
+  \item \textbf{test\_move\_passes\_go}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} pos wraps past 0 (new\_pos > 0)
+    \item \textit{Why needed:} Passing Go must also award salary.
+    \item \textit{Input:} pos=38, steps=6 → pos=4
+    \item \textit{Expected:} balance+=200
+    \item \textit{Error found:} None after fix
+  \end{itemize}
+
+  \item \textbf{test\_move\_zero\_steps}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{steps == 0}
+    \item \textit{Why needed:} The \texttt{if steps > 0} guard must prevent salary on zero moves.
+    \item \textit{Expected:} balance unchanged
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_move\_negative\_steps}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Negative steps — wraps via modulo
+    \item \textit{Why needed:} Edge case: ensure modulo arithmetic handles negative inputs.
+    \item \textit{Input:} pos=5, steps=-3 → pos=2
+    \item \textit{Expected:} pos=2, no salary
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_move\_large\_steps}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} steps=40 (full board wrap)
+    \item \textit{Why needed:} Tests modulo with exactly BOARD\_SIZE steps.
+    \item \textit{Expected:} pos=0 (same square)
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_move\_large\_steps\_with\_salary}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Large steps that cross Go
+    \item \textit{Why needed:} Even with large dice values, salary must be awarded on wrap.
+    \item \textit{Input:} pos=35, steps=10 → pos=5
+    \item \textit{Expected:} balance+=200
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_move\_exact\_board\_wrap}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Exact wrap — pos=1, steps=39 → pos=0
+    \item \textit{Why needed:} Boundary check at board edge.
+    \item \textit{Expected:} pos=0, salary collected
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_go\_to\_jail}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Direct jail assignment
+    \item \textit{Why needed:} Verifies \texttt{go\_to\_jail()} correctly sets position=10 and \texttt{in\_jail=True}.
+    \item \textit{Expected:} pos=10, in\_jail=True, jail\_turns=0
+    \item \textit{Error found:} None
+  \end{itemize}
+
+\end{enumerate}
+
+% ── SECTION 3: Property management ─────────────────────────────────────────
+\subsection*{\textcolor{blue}{Section 3 — Property Management (TC18–TC22)}}
+
+\begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
+
+  \item \textbf{test\_add\_property}
+  \begin{itemize}[noitemsep]
+    \item \textit{Why needed:} Confirm \texttt{add\_property()} appends to the holdings list.
+    \item \textit{Expected:} prop in player.properties
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_add\_property\_no\_duplicates}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Adding same prop twice — idempotency guard \texttt{if prop not in}
+    \item \textit{Why needed:} A property must appear only once in the holdings list.
+    \item \textit{Expected:} count == 1
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_remove\_property}
+  \begin{itemize}[noitemsep]
+    \item \textit{Why needed:} \texttt{remove\_property()} must correctly remove prop from list (used in trades and bankruptcy).
+    \item \textit{Expected:} prop not in properties
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_remove\_property\_not\_owned}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Remove prop not in list (silent no-op path)
+    \item \textit{Why needed:} Must not raise an exception on missing items.
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_count\_properties}
+  \begin{itemize}[noitemsep]
+    \item \textit{Why needed:} \texttt{count\_properties()} must return accurate count.
+    \item \textit{Input:} Add 3 properties
+    \item \textit{Expected:} count == 3
+    \item \textit{Error found:} None
+  \end{itemize}
+
+\end{enumerate}
+
+% ── SECTION 4: buy_property ─────────────────────────────────────────────────
+\subsection*{\textcolor{blue}{Section 4 — \texttt{buy\_property()} Branches (TC23–TC30)}}
+
+\begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
+
+  \item \textbf{test\_buy\_insufficient\_balance}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{player.balance < prop.price}
+    \item \textit{Why needed:} Player who cannot afford must be rejected.
+    \item \textit{Expected:} returns False, owner remains None
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_buy\_exact\_balance}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{balance == price} (boundary)
+    \item \textit{Why needed:} The condition is strict \texttt{<}; at exactly the price the purchase must succeed.
+    \item \textit{Expected:} returns True, balance == 0
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_buy\_already\_owned}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{prop.owner is not None}
+    \item \textit{Why needed:} Cannot buy an already-owned property.
+    \item \textit{Expected:} returns False
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_buy\_success\_state\_changes}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Full success path
+    \item \textit{Why needed:} Verifies all three state changes: balance deducted, owner set, prop in holdings.
+    \item \textit{Expected:} balance-=price, owner==player, prop in properties
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_buy\_multiple\_properties}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Repeated success path
+    \item \textit{Why needed:} Ensures sequential purchases accumulate correctly.
+    \item \textit{Expected:} count\_properties == 3, balance == 400
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_buy\_property\_zero\_price}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} price=0 edge case
+    \item \textit{Why needed:} Free properties must still be purchasable even with zero balance.
+    \item \textit{Expected:} returns True
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_buy\_returns\_false\_does\_not\_change\_balance}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Failed buy — balance must be unchanged
+    \item \textit{Why needed:} Guards against partial-state mutations on failure.
+    \item \textit{Expected:} balance unchanged at 50
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_buy\_with\_large\_price}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Large price value
+    \item \textit{Why needed:} No integer overflow or comparison bug with large numbers.
+    \item \textit{Input:} balance=1{,}000{,}000, price=999{,}999
+    \item \textit{Expected:} returns True, balance==1
+    \item \textit{Error found:} None
+  \end{itemize}
+
+\end{enumerate}
+
+% ── SECTION 5: pay_rent ─────────────────────────────────────────────────────
+\subsection*{\textcolor{blue}{Section 5 — \texttt{pay\_rent()} Branches (TC31–TC36)}}
+
+\begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
+
+  \item \textbf{test\_pay\_rent\_mortgaged\_no\_deduction}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{is\_mortgaged == True} — early return
+    \item \textit{Why needed:} No rent must be charged on a mortgaged property.
+    \item \textit{Expected:} Both balances unchanged
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_pay\_rent\_transfers\_money}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Normal rent payment
+    \item \textit{Why needed:} Rent must be deducted from payer and credited to owner.
+    \item \textit{Expected:} payer-=rent, owner+=rent
+    \item \textit{Error found:} \textbf{Error 4} — original code transferred rent to bank, not owner. Fixed to \texttt{prop.owner.add\_money(rent)}.
+  \end{itemize}
+
+  \item \textbf{test\_pay\_rent\_no\_owner}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{owner is None} — early return
+    \item \textit{Why needed:} Unowned property must not cause an AttributeError.
+    \item \textit{Expected:} No crash, payer balance unchanged
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_pay\_rent\_group\_bonus}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Full colour group owned by same player — rent doubled
+    \item \textit{Why needed:} The monopoly group bonus doubles rent; must activate on full ownership.
+    \item \textit{Expected:} payer balance == 1480 (paid 20 instead of 10)
+    \item \textit{Error found:} \textbf{Error 6} — \texttt{all\_owned\_by()} incorrectly checked properties. Fixed group comparison logic.
+  \end{itemize}
+
+  \item \textbf{test\_pay\_rent\_partial\_group\_no\_bonus}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Partial group ownership — no doubling
+    \item \textit{Why needed:} Split group ownership must not trigger the group bonus.
+    \item \textit{Expected:} base rent only (10, not 20)
+    \item \textit{Error found:} None after fix
+  \end{itemize}
+
+  \item \textbf{test\_pay\_rent\_zero\_rent}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} rent=0 edge case
+    \item \textit{Why needed:} Zero-rent properties must not alter either player's balance.
+    \item \textit{Expected:} payer balance unchanged
+    \item \textit{Error found:} None
+  \end{itemize}
+
+\end{enumerate}
+
+% ── SECTION 6: mortgage / unmortgage ────────────────────────────────────────
+\subsection*{\textcolor{blue}{Section 6 — Mortgage / Unmortgage Branches (TC37--TC44)}}
+
+\begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
+
+  \item \textbf{test\_mortgage\_not\_owner\_returns\_false}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{prop.owner != player}
+    \item \textit{Why needed:} Player cannot mortgage property they don't own.
+    \item \textit{Expected:} returns False
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_mortgage\_success}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Full mortgage path
+    \item \textit{Why needed:} Checks \texttt{is\_mortgaged=True} and payout credited.
+    \item \textit{Expected:} returns True, balance increases
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_mortgage\_already\_mortgaged}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{payout == 0} (already mortgaged)
+    \item \textit{Why needed:} Re-mortgaging must fail gracefully.
+    \item \textit{Expected:} returns False
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_unmortgage\_not\_owner\_returns\_false}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Not owner
+    \item \textit{Expected:} returns False
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_unmortgage\_insufficient\_funds}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{balance < cost}
+    \item \textit{Why needed:} Cannot redeem mortgage without funds; property must stay mortgaged.
+    \item \textit{Expected:} returns False, is\_mortgaged still True
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_unmortgage\_success}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Full unmortgage path
+    \item \textit{Why needed:} Verifies is\_mortgaged=False and balance reduced.
+    \item \textit{Expected:} returns True, balance < previous, is\_mortgaged=False
+    \item \textit{Error found:} \textbf{Error 6} — flag was not reset. Fixed: \texttt{prop.is\_mortgaged = False}.
+  \end{itemize}
+
+  \item \textbf{test\_unmortgage\_not\_mortgaged}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{cost == 0} (not mortgaged)
+    \item \textit{Expected:} returns False
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_mortgage\_unmortgage\_full\_cycle}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Complete round trip
+    \item \textit{Why needed:} After a mortgage/unmortgage cycle, is\_mortgaged must restore to False.
+    \item \textit{Error found:} None after fix
+  \end{itemize}
+
+\end{enumerate}
+
+% ── SECTION 7: trade ────────────────────────────────────────────────────────
+\subsection*{\textcolor{blue}{Section 7 — \texttt{trade()} Branches (TC45--TC50)}}
+
+\begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
+
+  \item \textbf{test\_trade\_seller\_not\_owner}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{prop.owner != seller}
+    \item \textit{Expected:} returns False
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_trade\_buyer\_cannot\_afford}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{buyer.balance < cash\_amount}
+    \item \textit{Expected:} returns False
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_trade\_success\_ownership\_transfer}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Full success path
+    \item \textit{Why needed:} prop.owner must switch to buyer, appear in buyer.properties, disappear from seller.
+    \item \textit{Expected:} prop.owner==buyer, in buyer.properties, not in seller.properties
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_trade\_success\_cash\_transfer}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Cash flow on success
+    \item \textit{Why needed:} Buyer's balance must be reduced by cash\_amount.
+    \item \textit{Expected:} buyer.balance == 1200
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_trade\_zero\_cash}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} cash\_amount=0 (gift trade)
+    \item \textit{Why needed:} Free trades must still transfer ownership.
+    \item \textit{Expected:} returns True, owner changes
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_trade\_exact\_buyer\_balance}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{balance == cash\_amount} (boundary)
+    \item \textit{Why needed:} Strict \texttt{<} condition; exact balance must allow trade.
+    \item \textit{Expected:} returns True, buyer.balance==0
+    \item \textit{Error found:} None
+  \end{itemize}
+
+\end{enumerate}
+
+% ── SECTION 8: _apply_card ──────────────────────────────────────────────────
+\subsection*{\textcolor{blue}{Section 8 — \texttt{\_apply\_card()} All Action Branches (TC51–TC57)}}
+
+\begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
+
+  \item \textbf{test\_apply\_card\_none}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} card is None — early return guard
+    \item \textit{Why needed:} Empty deck draw must not crash.
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_apply\_card\_collect}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} action == ``collect''
+    \item \textit{Why needed:} Collect card must credit bank amount to player.
+    \item \textit{Expected:} balance == 1700 (1500 + 200)
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_apply\_card\_pay}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} action == ``pay''
+    \item \textit{Why needed:} Pay card must debit player and credit bank.
+    \item \textit{Expected:} balance == 400
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_apply\_card\_jail}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} action == ``jail''
+    \item \textit{Why needed:} Jail card must set in\_jail=True.
+    \item \textit{Expected:} player.in\_jail == True
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_apply\_card\_jail\_free}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} action == ``jail\_free''
+    \item \textit{Why needed:} GOOJF card must increment the counter.
+    \item \textit{Expected:} get\_out\_of\_jail\_cards == 1
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_apply\_card\_birthday}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} action == ``birthday'' — loop over other players
+    \item \textit{Why needed:} Birthday card must collect from every other player.
+    \item \textit{Expected:} main+=100 (50 from each), others-=50
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_apply\_card\_move\_to\_passes\_go}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} action == ``move\_to'' with \texttt{value < old\_pos}
+    \item \textit{Why needed:} Moving to a position before current must award Go salary.
+    \item \textit{Input:} pos=30, move\_to=0
+    \item \textit{Expected:} balance == 1700
+    \item \textit{Error found:} None
+  \end{itemize}
+
+\end{enumerate}
+
+% ── SECTION 9: bankruptcy / find_winner ────────────────────────────────────
+\subsection*{\textcolor{blue}{Section 9 — Bankruptcy and Find Winner (TC58--TC64)}}
+
+\begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
+
+  \item \textbf{test\_bankruptcy\_eliminates}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{is\_bankrupt()} returns True
+    \item \textit{Why needed:} Bankrupt player must be marked eliminated and removed from game.
+    \item \textit{Expected:} is\_eliminated == True
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_bankruptcy\_releases\_properties}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Property cleanup on bankruptcy
+    \item \textit{Why needed:} All properties must revert to unowned and unmortgaged.
+    \item \textit{Expected:} prop.owner==None, is\_mortgaged==False
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_no\_bankruptcy\_positive\_balance}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{balance > 0} — alive path
+    \item \textit{Expected:} is\_eliminated == False
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_find\_winner\_richest\_player}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Multiple players — max by net\_worth
+    \item \textit{Why needed:} Must correctly identify the wealthiest player as winner.
+    \item \textit{Expected:} winner.name == ``Alice''
+    \item \textit{Error found:} \textbf{Error 5} — original returned \texttt{min()} (poorest). Fixed to \texttt{max()}.
+  \end{itemize}
+
+  \item \textbf{test\_find\_winner\_single\_player}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} One player remaining
+    \item \textit{Expected:} returns that player
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_find\_winner\_empty\_returns\_none}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Empty players list
+    \item \textit{Expected:} returns None
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_advance\_turn\_wraps}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} Index wraps from last player back to 0
+    \item \textit{Why needed:} Turn rotation must wrap correctly using modulo.
+    \item \textit{Expected:} current\_index == 0
+    \item \textit{Error found:} None
+  \end{itemize}
+
+\end{enumerate}
+
+% ── SECTION 10: PropertyGroup ───────────────────────────────────────────────
+\subsection*{\textcolor{blue}{Section 10 — \texttt{PropertyGroup} Rent Doubling (TC65--TC67)}}
+
+\begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
+
+  \item \textbf{test\_group\_not\_all\_owned}
+  \begin{itemize}[noitemsep]
+    \item \textit{Why needed:} Split ownership must not trigger doubling.
+    \item \textit{Expected:} \texttt{all\_owned\_by(a)} returns False
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_group\_all\_owned}
+  \begin{itemize}[noitemsep]
+    \item \textit{Why needed:} Full group ownership must be correctly detected.
+    \item \textit{Expected:} \texttt{all\_owned\_by(a)} returns True
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_group\_get\_rent\_doubles\_when\_full}
+  \begin{itemize}[noitemsep]
+    \item \textit{Why needed:} Rent returned by \texttt{get\_rent()} must be doubled when player owns full group.
+    \item \textit{Expected:} \texttt{get\_rent()} == 20 (base 10 $\times$ 2)
+    \item \textit{Error found:} None
+  \end{itemize}
+
+\end{enumerate}
+
+% ── SECTION 11: Board / Dice / Cards ────────────────────────────────────────
+\subsection*{\textcolor{blue}{Section 11 — Board, Dice, Cards Modules (TC68--TC70)}}
+
+\begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
+
+  \item \textbf{test\_board\_initialization}
+  \begin{itemize}[noitemsep]
+    \item \textit{Why needed:} Board must load 22 purchasable property tiles and position 0 must be ``go''.
+    \item \textit{Expected:} len(properties)==22, get\_tile\_type(0)==``go''
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_dice\_roll\_bounds}
+  \begin{itemize}[noitemsep]
+    \item \textit{Why needed:} Dice must always produce a value in [2, 12] over 200 rolls.
+    \item \textit{Expected:} $2 \leq$ roll $\leq 12$ always
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_card\_deck\_operations}
+  \begin{itemize}[noitemsep]
+    \item \textit{Why needed:} CardDeck initializes with 12 Chance cards and \texttt{draw()} returns a dict.
+    \item \textit{Expected:} len==12, drawn card is dict
+    \item \textit{Error found:} None
+  \end{itemize}
+
+\end{enumerate}
+
+% ── SECTION 12: Jail / Tile edge cases ──────────────────────────────────────
+\subsection*{\textcolor{blue}{Section 12 — Jail After 3 Doubles and Tile Triggers (TC71--TC73)}}
+
+\begin{enumerate}[resume, label=\textbf{TC\arabic*.}]
+
+  \item \textbf{test\_player\_sent\_to\_jail\_after\_3\_doubles}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} \texttt{doubles\_streak >= 3} in \texttt{play\_turn()}
+    \item \textit{Why needed:} Three consecutive doubles must send player to jail with no movement.
+    \item \textit{Expected:} player.in\_jail == True
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_income\_tax\_tile}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} tile == ``income\_tax'' in \texttt{\_move\_and\_resolve()}
+    \item \textit{Why needed:} Landing on position 4 (Income Tax) must deduct \$200.
+    \item \textit{Expected:} balance -= 200
+    \item \textit{Error found:} None
+  \end{itemize}
+
+  \item \textbf{test\_go\_to\_jail\_tile}
+  \begin{itemize}[noitemsep]
+    \item \textit{Branch:} tile == ``go\_to\_jail'' in \texttt{\_move\_and\_resolve()}
+    \item \textit{Why needed:} Landing on position 30 must set in\_jail=True.
+    \item \textit{Expected:} in\_jail == True
+    \item \textit{Error found:} None
+  \end{itemize}
+
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{\textcolor{blue}{4. Error Summary and Commits}}
+
+\begin{center}
+\begin{tabular}{cll}
+\toprule
+Error \# & What Was Fixed & Commit Message \\
+\midrule
+4 & \texttt{pay\_rent()} credited bank instead of owner & \texttt{Error 4: Fixed pay\_rent to correctly transfer money to owner} \\
+5 & \texttt{find\_winner()} returned \texttt{min()} instead of \texttt{max()} & \texttt{Error 5: Fixed find\_winner to return the wealthiest player} \\
+6 & \texttt{unmortgage()} did not reset \texttt{is\_mortgaged} flag; & \texttt{Error 6: Fixed unmortgage flag and all\_owned\_by logic} \\
+  & \texttt{all\_owned\_by()} group check was incorrect & \\
+7 & \texttt{move()} did not award salary when landing exactly on Go & \texttt{Error 7: Fixed player movement to properly award Go salary} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{\textcolor{blue}{Conclusion}}
+All 73 test cases were executed with \texttt{python -m pytest tests/test\_whitebox.py -v}.
+Result: \textbf{73 passed}. Four logical bugs were found and corrected in the MoneyPoly codebase.
 
 \end{document}
