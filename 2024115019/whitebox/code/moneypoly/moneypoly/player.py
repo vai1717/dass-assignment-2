@@ -49,10 +49,13 @@ class Player:
         old_position = self.position
         self.position = (self.position + steps) % BOARD_SIZE
 
-        # Bug: Only awards salary when exactly landing on Go
-        if steps > 0 and self.position == 0:
+        # Award salary when passing through or landing on Go
+        if steps > 0 and self.position < old_position:
             self.add_money(GO_SALARY)
-            print(f"  {self.name} landed on Go and collected ${GO_SALARY}.")
+            if self.position == 0:
+                print(f"  {self.name} landed on Go and collected ${GO_SALARY}.")
+            else:
+                print(f"  {self.name} passed Go and collected ${GO_SALARY}.")
 
         return self.position
 
