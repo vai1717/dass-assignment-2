@@ -1,3 +1,4 @@
+# pylint: disable=too-many-instance-attributes
 
 # Player module for MoneyPoly: defines the Player class and player logic.
 """

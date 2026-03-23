@@ -1,3 +1,4 @@
+# pylint: disable=too-many-instance-attributes,too-many-arguments,too-many-positional-arguments
 """
 Property module for MoneyPoly: defines the Property class and related logic.
 """

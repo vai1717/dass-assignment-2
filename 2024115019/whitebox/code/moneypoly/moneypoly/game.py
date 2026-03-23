@@ -1,3 +1,4 @@
+# pylint: disable=too-many-instance-attributes,too-many-branches,wrong-import-order
 
 """
 Game module for MoneyPoly: manages the game session, player turns, and game logic.
