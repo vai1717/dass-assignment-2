@@ -52,7 +52,6 @@ class Property:
         """
         if not self.is_mortgaged:
             return 0
-        self.is_mortgaged = False
         return int(self.mortgage_value * 1.1)
 
     def is_available(self):
@@ -81,7 +80,7 @@ class PropertyGroup:
         """Return True if every property in this group is owned by `player`."""
         if player is None:
             return False
-        return any(p.owner == player for p in self.properties)
+        return all(p.owner == player for p in self.properties)
 
     def get_owner_counts(self):
         """Return a dict mapping each owner to how many properties they hold in this group."""
