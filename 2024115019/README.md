@@ -33,11 +33,11 @@
 
 ## GitHub Repository
 
-[Link to your GitHub repository](https://github.com/vai1717/dass-assignment-2)
+[Link to my GitHub repository](https://github.com/vai1717/dass-assignment-2)
 
 ---
 ## One Drive link
-[Link to your one drive link](https://iiithydresearch-my.sharepoint.com/:f:/g/personal/vaibhavi_kolipaka_research_iiit_ac_in/IgCa175Yg1T-Q7hTHXk17oG3AfoppUlfskEhO_ZALG2Ec6M?e=wnTkKh)
+[Link to my one drive link](https://iiithydresearch-my.sharepoint.com/:f:/g/personal/vaibhavi_kolipaka_research_iiit_ac_in/IgCa175Yg1T-Q7hTHXk17oG3AfoppUlfskEhO_ZALG2Ec6M?e=wnTkKh)
 
 
 ## Repository Structure
