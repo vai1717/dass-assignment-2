@@ -4,250 +4,468 @@
 \usepackage{xcolor}
 \geometry{margin=1in}
 \title{\textcolor{blue}{Integration Testing Report for StreetRace Manager}}
-\author{Vaibhavi Kolipaka}
+\author{2024115019}
 \date{\today}
 \begin{document}
 \maketitle
 
-\section*{Implemented Modules}
-\begin{itemize}
-	\item \textbf{registration.py}: Handles registration of crew members and their roles.
-	\item \textbf{crew\_management.py}: Assigns roles and manages crew skills.
-	\item \textbf{inventory.py}: Manages cars, parts, tools, and cash.
-	\item \textbf{race\_management.py}: Ensures only registered drivers can enter races with valid cars.
-	\item \textbf{results.py}: Records race results and updates cash. (Bonus: maintains rankings and history)
-	\item \textbf{mission\_planning.py}: Assigns missions only if required roles are available. (Bonus: supports multi-role missions)
-	\item \textbf{sponsorship.py}: Manages sponsors and funds. (Bonus: tracks total funds)
-	\item \textbf{garage.py}: Repairs cars present in inventory.
-	\item \textbf{main.py}: Entry point, coordinates all modules and enforces business rules.
-\end{itemize}
+% ──────────────────────────────────────────────────────
+\section*{\textcolor{blue}{Implemented Modules}}
 
-\section*{Bonus Modules}
-\begin{itemize}
-	\item \textbf{results.py}: Maintains race rankings and history.
-	\item \textbf{mission\_planning.py}: Supports missions requiring multiple roles.
-	\item \textbf{sponsorship.py}: Tracks total sponsorship funds.
-\end{itemize}
+The following six required modules and two bonus modules were designed and implemented:
 
-\section*{Module Descriptions}
 \begin{description}
-	\item[registration.py] Registers crew members and their roles.
-	\item[crew\_management.py] Assigns and manages crew roles and skills.
-	\item[inventory.py] Manages all cars, parts, tools, and cash for the team.
-	\item[race\_management.py] Handles race creation, ensures only drivers with valid cars can participate.
-	\item[results.py] Records race outcomes, updates cash, maintains rankings and history.
-	\item[mission\_planning.py] Assigns missions, checks for required roles, supports multi-role missions.
-	\item[sponsorship.py] Manages sponsors, tracks and sums sponsorship funds.
-	\item[garage.py] Repairs cars, ensures only inventory cars are repaired.
-	\item[main.py] Integrates all modules, enforces business rules, and coordinates system flow.
+  \item[\textbf{registration.py}] Registers new crew members, storing their name and role. Raises \texttt{ValueError} on duplicate registrations.
+  \item[\textbf{crew\_management.py}] Manages roles and records skill levels for each crew member. A member must be registered before a role can be assigned.
+  \item[\textbf{inventory.py}] Tracks cars, spare parts, tools, and the team's cash balance.
+  \item[\textbf{race\_management.py}] Creates races and enforces that only registered drivers with cars in inventory may participate.
+  \item[\textbf{results.py}] Records race outcomes, maintains win rankings, logs race history, and credits prize money to the inventory cash balance.
+  \item[\textbf{mission\_planning.py}] Assigns missions and verifies all required crew roles are available before the mission can start.
+  \item[\textbf{garage.py}] \textit{(Bonus)} Repairs cars that exist in the inventory and maintains a repair log.
+  \item[\textbf{sponsorship.py}] \textit{(Bonus)} Manages sponsors and tracks total sponsorship funds separately from race prize money.
 \end{description}
 
+Each module was verified individually before integration testing began.
 
-\section*{Integration Test Cases}
+% ──────────────────────────────────────────────────────
+\section*{\textcolor{blue}{Module Interaction Rules (Business Logic)}}
+\begin{itemize}[noitemsep]
+  \item A crew member must be registered before a role can be assigned.
+  \item Only members with the \texttt{driver} role may enter a race.
+  \item Cars must exist in inventory before a race or repair can use them.
+  \item Race results must update the cash balance in Inventory.
+  \item Missions cannot start if any required role is unavailable.
+  \item A damaged-car repair mission must verify a mechanic is available before proceeding.
+\end{itemize}
 
+% ──────────────────────────────────────────────────────
 \section*{\textcolor{blue}{Integration Test Cases (Q2.2)}}
-Each test case below validates how different modules interact. For each, we specify the scenario, involved modules, expected and actual results, errors/logical issues, and a simple explanation.
 
-% Main test case heading style
+Each test case specifies: the scenario, which modules are involved, the expected result, the actual result, any errors or logical issues found, and a simple explanation of why the test is needed.
+
 \renewcommand{\labelitemi}{\textcolor{red}{$\blacktriangleright$}}
 
-% Test Case 1
-\subsection*{\textcolor{red}{Registering a driver and then entering the driver into a race}}
+%% ── SECTION 1: Registration (individual) ─────────────────────────────────────
+
+\subsection*{\textcolor{red}{Test 1: Register a new member successfully}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Register a member officially as a driver and then formally enter them into a competitive race.
-	\item \textcolor{red}{Modules involved:} registration, inventory, race\_management
-	\item \textcolor{red}{Expected result:} Race created flawlessly with the correctly assigned driver and designated vehicle.
-	\item \textcolor{red}{Actual result:} Initially allowed any member regardless of role to enter. Fixed to safely construct race strictly enforcing the driver role dependency.
-	\item \textcolor{red}{Errors or logical issues found:} \texttt{Error 1 (Integration)}. The \texttt{race\_management.py} module lacked internal validation to verify if the registering member truly possessed a "driver" status, erroneously permitting mechanics to participate. Systematically fixed and verified dynamically.
+  \item \textbf{Scenario:} Call \texttt{register\_member("Alice", "driver")}.
+  \item \textbf{Modules:} registration
+  \item \textbf{Expected:} Member object with \texttt{name="Alice"} and \texttt{role="driver"} returned.
+  \item \textbf{Actual:} Member returned correctly.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Verifies the basic registration path works; all other modules depend on this.
 \end{itemize}
 
-% Test Case 2
-\subsection*{\textcolor{red}{Attempting to enter a race without a registered driver}}
+\subsection*{\textcolor{red}{Test 2: Duplicate registration raises ValueError}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Attempt to construct a race using someone not fully registered or uncertified within the internal framework.
-	\item \textcolor{red}{Modules involved:} registration, inventory, race\_management
-	\item \textcolor{red}{Expected result:} System safely catches the invalid access and explicitly raises a ValueError.
-	\item \textcolor{red}{Actual result:} ValueError actively raised matching security guidelines cleanly.
-	\item \textcolor{red}{Errors or logical issues found:} None natively; this specific constraint operated perfectly out-of-the-box against unregistered users.
+  \item \textbf{Scenario:} Register "Eve" twice.
+  \item \textbf{Modules:} registration
+  \item \textbf{Expected:} \texttt{ValueError} on second call.
+  \item \textbf{Actual:} \texttt{ValueError} raised.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Ensures uniqueness constraint — duplicate crew members must be blocked.
 \end{itemize}
 
-% Test Case 3
-\subsection*{\textcolor{red}{Completing a race and verifying results and prize money update the inventory}}
+\subsection*{\textcolor{red}{Test 3: Get registered member}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Conclude a simulated race competition and trigger the global payout functions to the primary team wallet.
-	\item \textcolor{red}{Modules involved:} registration, inventory, race\_management, results
-	\item \textcolor{red}{Expected result:} The global singleton \texttt{inventory.cash} natively increases by exactly the specified algorithmic prize pool distributed upon race completion.
-	\item \textcolor{red}{Actual result:} Initially failed; prize money was mathematically lost in transit. Fixed to accurately parse and deposit directly into \texttt{inventory.cash} routing points.
-	\item \textcolor{red}{Errors or logical issues found:} \texttt{Error 2 (Integration)}. The explicit \texttt{results.py} module fundamentally omitted any invocation of \texttt{inventory.update\_cash()}, essentially trapping generated money solely as logging analytics and systemically draining team finances. Directly repaired via Git.
+  \item \textbf{Scenario:} Register "Bob" then call \texttt{get\_member("Bob")}.
+  \item \textbf{Modules:} registration
+  \item \textbf{Expected:} Member object returned with correct role.
+  \item \textbf{Actual:} Correct member returned.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Other modules call \texttt{get\_member} to look up crew; must work reliably.
 \end{itemize}
 
-% Test Case 4
-\subsection*{\textcolor{red}{Assigning a mission and ensuring correct crew roles are validated}}
+\subsection*{\textcolor{red}{Test 4: Get unregistered member returns None}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Attempting to generate a custom multi-objective mission requiring specialized crew roles precisely (such as verifying a team possesses mechanics).
-	\item \textcolor{red}{Modules involved:} registration, mission\_planning, crew\_management
-	\item \textcolor{red}{Expected result:} Mission mathematically assigned smoothly only if all explicit role capacities exist natively in the crew pool.
-	\item \textcolor{red}{Actual result:} Validated smoothly; attempting to assign unsupported missions throws clean ValueErrors seamlessly.
-	\item \textcolor{red}{Errors or logical issues found:} None. The role dependency engine tracked mission parameters perfectly with 100\% bounds stability.
+  \item \textbf{Scenario:} Call \texttt{get\_member("Ghost")} on an empty registry.
+  \item \textbf{Modules:} registration
+  \item \textbf{Expected:} \texttt{None} returned.
+  \item \textbf{Actual:} \texttt{None} returned.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Guards against crashes when racing or mission code looks up unknown names.
 \end{itemize}
 
-% Test Case 5
-\subsection*{\textcolor{red}{Assign mission with missing role}}
+\subsection*{\textcolor{red}{Test 5: Multiple members with different roles}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Assign mission with missing role.
-	\item \textcolor{red}{Modules involved:} registration, mission\_planning
-	\item \textcolor{red}{Expected result:} ValueError raised.
-	\item \textcolor{red}{Actual result:} ValueError raised.
-	\item \textcolor{red}{Errors:} None.
-	\item \textcolor{red}{Explanation:} Ensures the system does not allow missions to be assigned if required roles are missing, preventing incomplete assignments.
+  \item \textbf{Scenario:} Register Alice (driver), Bob (mechanic), Carol (strategist).
+  \item \textbf{Modules:} registration
+  \item \textbf{Expected:} Each member has their correct role stored.
+  \item \textbf{Actual:} All roles correct.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} The system must support multiple role types for missions and races.
 \end{itemize}
 
-% Test Case 6
-\subsection*{\textcolor{red}{Repair car in inventory}}
+%% ── SECTION 2: CrewManagement (individual) ───────────────────────────────────
+
+\subsection*{\textcolor{red}{Test 6: Assign role to registered member}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Repair car in inventory.
-	\item \textcolor{red}{Modules involved:} inventory, garage
-	\item \textcolor{red}{Expected result:} Car repaired successfully.
-	\item \textcolor{red}{Actual result:} Car repaired as expected.
-	\item \textcolor{red}{Errors:} None.
-	\item \textcolor{red}{Explanation:} Ensures that the garage module can successfully repair cars that exist in the inventory, verifying integration between inventory and garage.
+  \item \textbf{Scenario:} Register Charlie as driver, then reassign to mechanic via CrewManagement.
+  \item \textbf{Modules:} registration, crew\_management
+  \item \textbf{Expected:} Charlie's role updated to mechanic in the Registration store.
+  \item \textbf{Actual:} Role updated correctly.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Confirms CrewManagement reads from and writes to the shared Registration store.
 \end{itemize}
 
-% Test Case 7
-\subsection*{\textcolor{red}{Repair car not in inventory}}
+\subsection*{\textcolor{red}{Test 7: Assign role to unregistered member raises ValueError}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Repair car not in inventory.
-	\item \textcolor{red}{Modules involved:} inventory, garage
-	\item \textcolor{red}{Expected result:} ValueError raised.
-	\item \textcolor{red}{Actual result:} ValueError raised.
-	\item \textcolor{red}{Errors:} None.
-	\item \textcolor{red}{Explanation:} Checks that the system prevents repairs on cars that are not present in the inventory, enforcing data consistency.
+  \item \textbf{Scenario:} Call \texttt{crew.assign\_role("Dana", "mechanic")} without registering Dana.
+  \item \textbf{Modules:} registration, crew\_management
+  \item \textbf{Expected:} \texttt{ValueError}.
+  \item \textbf{Actual:} \texttt{ValueError} raised.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Enforces the business rule: member must be registered before a role is assigned.
 \end{itemize}
 
-% Test Case 8
-\subsection*{\textcolor{red}{Add sponsors and total funds}}
+\subsection*{\textcolor{red}{Test 8: Set and get skill levels}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Add sponsors, total funds.
-	\item \textcolor{red}{Modules involved:} sponsorship
-	\item \textcolor{red}{Expected result:} Total funds is sum of all sponsors.
-	\item \textcolor{red}{Actual result:} Total funds is 8000.
-	\item \textcolor{red}{Errors:} None.
-	\item \textcolor{red}{Explanation:} Verifies that multiple sponsors can be added and the total sponsorship funds are calculated correctly, testing the sponsorship module's aggregation logic.
+  \item \textbf{Scenario:} Set Alice's driving skill to 9, then retrieve it.
+  \item \textbf{Modules:} registration, crew\_management
+  \item \textbf{Expected:} \texttt{get\_skills("Alice")["driving"] == 9}.
+  \item \textbf{Actual:} Returns 9.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Skill tracking is a core CrewManagement requirement.
 \end{itemize}
 
-% Test Case 9
-\subsection*{\textcolor{red}{Assign new role to member}}
+\subsection*{\textcolor{red}{Test 9: Get skills for unknown member returns empty dict}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Assign new role to member.
-	\item \textcolor{red}{Modules involved:} registration, crew\_management
-	\item \textcolor{red}{Expected result:} Role updated successfully.
-	\item \textcolor{red}{Actual result:} Role updated as expected.
-	\item \textcolor{red}{Errors:} None.
-	\item \textcolor{red}{Explanation:} Ensures that crew members can have their roles updated, and that the system correctly reflects these changes across modules.
+  \item \textbf{Scenario:} Call \texttt{get\_skills("Nobody")}.
+  \item \textbf{Modules:} crew\_management
+  \item \textbf{Expected:} Empty dict returned.
+  \item \textbf{Actual:} \texttt{\{\}} returned.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Protects against KeyErrors when querying unknown members.
 \end{itemize}
 
-% Test Case 10
-\subsection*{\textcolor{red}{Assign role to unregistered member}}
+%% ── SECTION 3: Inventory (individual) ────────────────────────────────────────
+
+\subsection*{\textcolor{red}{Test 10: Add car to inventory}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Assign role to unregistered member.
-	\item \textcolor{red}{Modules involved:} registration, crew\_management
-	\item \textcolor{red}{Expected result:} ValueError raised.
-	\item \textcolor{red}{Actual result:} ValueError raised.
-	\item \textcolor{red}{Errors:} None.
-	\item \textcolor{red}{Explanation:} Checks that only registered members can be assigned roles, preventing invalid assignments and ensuring data integrity.
+  \item \textbf{Scenario:} \texttt{inv.add\_car("Car1")}.
+  \item \textbf{Modules:} inventory
+  \item \textbf{Expected:} "Car1" in \texttt{inv.cars}.
+  \item \textbf{Actual:} Present in list.
+  \item \textbf{Errors:} None.
 \end{itemize}
 
-% Test Case 11
-\subsection*{\textcolor{red}{Duplicate crew registration}}
+\subsection*{\textcolor{red}{Test 11: Inventory cash starts at zero}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Duplicate crew registration.
-	\item \textcolor{red}{Modules involved:} registration
-	\item \textcolor{red}{Expected result:} ValueError raised.
-	\item \textcolor{red}{Actual result:} ValueError raised.
-	\item \textcolor{red}{Errors:} None.
-	\item \textcolor{red}{Explanation:} Ensures the system does not allow the same crew member to be registered more than once, enforcing uniqueness.
+  \item \textbf{Scenario:} Create a fresh Inventory.
+  \item \textbf{Modules:} inventory
+  \item \textbf{Expected:} \texttt{inv.cash == 0}.
+  \item \textbf{Actual:} 0.
+  \item \textbf{Errors:} None.
 \end{itemize}
 
-% Test Case 12
-\subsection*{\textcolor{red}{Create race with non-driver}}
+\subsection*{\textcolor{red}{Test 12: Add parts and tools}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Create race with non-driver.
-	\item \textcolor{red}{Modules involved:} registration, inventory, race\_management
-	\item \textcolor{red}{Expected result:} ValueError raised.
-	\item \textcolor{red}{Actual result:} ValueError raised.
-	\item \textcolor{red}{Errors:} None.
-	\item \textcolor{red}{Explanation:} Verifies that only members with the driver role can be entered into races, enforcing role-based restrictions.
+  \item \textbf{Scenario:} Add a part and a tool to inventory.
+  \item \textbf{Modules:} inventory
+  \item \textbf{Expected:} Each appears in the respective list.
+  \item \textbf{Actual:} Both present.
+  \item \textbf{Errors:} None.
 \end{itemize}
 
-% Test Case 13
-\subsection*{\textcolor{red}{Create race with missing car}}
+\subsection*{\textcolor{red}{Test 13: Cash updates cumulatively}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Create race with missing car.
-	\item \textcolor{red}{Modules involved:} registration, inventory, race\_management
-	\item \textcolor{red}{Expected result:} ValueError raised.
-	\item \textcolor{red}{Actual result:} ValueError raised.
-	\item \textcolor{red}{Errors:} None.
-	\item \textcolor{red}{Explanation:} Ensures that a race cannot be created unless the car exists in the inventory, maintaining data consistency.
+  \item \textbf{Scenario:} Call \texttt{update\_cash(500)} then \texttt{update\_cash(300)}.
+  \item \textbf{Modules:} inventory
+  \item \textbf{Expected:} \texttt{inv.cash == 800}.
+  \item \textbf{Actual:} 800.
+  \item \textbf{Errors:} None.
 \end{itemize}
 
-% Test Case 14
-\subsection*{\textcolor{red}{Full workflow: register, assign, race, result, mission, repair, sponsor}}
+%% ── SECTION 4: RaceManagement (cross-module) ─────────────────────────────────
+
+\subsection*{\textcolor{red}{Test 14: Registering a driver and then entering the driver into a race}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} End-to-end workflow.
-	\item \textcolor{red}{Modules involved:} registration, crew\_management, inventory, race\_management, results, mission\_planning, sponsorship, garage
-	\item \textcolor{red}{Expected result:} All steps succeed, cash and sponsorship updated.
-	\item \textcolor{red}{Actual result:} All steps succeed.
-	\item \textcolor{red}{Errors:} None.
-	\item \textcolor{red}{Explanation:} Simulates a real-world scenario covering all modules, ensuring the entire system works together as intended.
+  \item \textbf{Scenario:} Register Alice as driver, add Car1 to inventory, create race.
+  \item \textbf{Modules:} registration, inventory, race\_management
+  \item \textbf{Expected:} Race object with \texttt{race.driver.name == "Alice"} and \texttt{race.car == "Car1"}.
+  \item \textbf{Actual:} Race created correctly.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Core integration scenario from the assignment. Validates the registration-to-race data flow.
 \end{itemize}
 
-% Test Case 15
-\subsection*{\textcolor{red}{Mission fails due to no mechanic}}
+\subsection*{\textcolor{red}{Test 15: Attempting to enter a race without a registered driver}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Assign mission with missing mechanic.
-	\item \textcolor{red}{Modules involved:} registration, mission\_planning
-	\item \textcolor{red}{Expected result:} ValueError raised.
-	\item \textcolor{red}{Actual result:} ValueError raised.
-	\item \textcolor{red}{Errors:} None.
-	\item \textcolor{red}{Explanation:} Ensures that missions requiring a mechanic cannot be assigned if no mechanic is available, enforcing role requirements.
+  \item \textbf{Scenario:} Try to create a race for "UnknownDriver" who is not registered.
+  \item \textbf{Modules:} registration, race\_management
+  \item \textbf{Expected:} \texttt{ValueError} raised.
+  \item \textbf{Actual:} \texttt{ValueError} raised.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Business rule — only registered crew can race. This is a mandatory assignment scenario.
 \end{itemize}
 
-% Test Case 16
-\subsection*{\textcolor{red}{Role-based restrictions: race and repair}}
+\subsection*{\textcolor{red}{Test 16: Non-driver role cannot enter a race}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Only a mechanic can be assigned to a repair mission and only a driver can race.
-	\item \textcolor{red}{Modules involved:} registration, crew\_management, inventory, race\_management, mission\_planning
-	\item \textcolor{red}{Expected result:} Only correct roles succeed; assigning a mission to a non-mechanic should raise ValueError.
-	\item \textcolor{red}{Actual result:} ValueError is raised, matching expectations.
-	\item \textcolor{red}{Errors:} None (bug correctly handled in assertions).
-	\item \textcolor{red}{Explanation:} The test correctly validates that mission assignment logic enforces strict role checks.
+  \item \textbf{Scenario:} Register Frank as mechanic, attempt to enter Frank in a race.
+  \item \textbf{Modules:} registration, race\_management
+  \item \textbf{Expected:} \texttt{ValueError}.
+  \item \textbf{Actual:} Initially system allowed it (missing role check).
+  \item \textbf{Errors or logical issues:} \textbf{Error 1 (Integration)} — \texttt{race\_management.py} was missing the \texttt{member.role != "driver"} check, allowing mechanics to race. Fixed and committed.
+  \item \textbf{Why needed:} Enforces the core business rule: only drivers may race.
 \end{itemize}
 
-% Test Case 17
-\subsection*{\textcolor{red}{Sponsorship and race integration}}
+\subsection*{\textcolor{red}{Test 17: Car not in inventory raises ValueError}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Sponsorship and race result.
-	\item \textcolor{red}{Modules involved:} registration, inventory, race\_management, results, sponsorship
-	\item \textcolor{red}{Expected result:} Both cash and sponsorship funds updated.
-	\item \textcolor{red}{Actual result:} As expected.
-	\item \textcolor{red}{Errors:} None.
-	\item \textcolor{red}{Explanation:} Checks that both race results and sponsorships update their respective funds, testing integration between financial modules.
+  \item \textbf{Scenario:} Registered driver tries to race with a car not in inventory.
+  \item \textbf{Modules:} inventory, race\_management
+  \item \textbf{Expected:} \texttt{ValueError}.
+  \item \textbf{Actual:} \texttt{ValueError} raised.
+  \item \textbf{Errors:} None.
 \end{itemize}
 
-
-% Test Case 18
-\subsection*{\textcolor{red}{Duplicate car addition}}
+\subsection*{\textcolor{red}{Test 18: Multiple drivers enter separate races independently}}
 \begin{itemize}
-	\item \textcolor{red}{Scenario:} Duplicate car addition.
-	\item \textcolor{red}{Modules involved:} inventory
-	\item \textcolor{red}{Expected result:} Car1 appears twice (current design allows duplicates).
-	\item \textcolor{red}{Actual result:} Car1 appears twice and total inventory count reflects this.
-	\item \textcolor{red}{Errors:} None (acknowledged business logic behavior).
-	\item \textcolor{red}{Explanation:} Test validates and asserts that the current design accurately adds duplicate cars to inventory and manages state accordingly.
+  \item \textbf{Scenario:} Alice and Bob each have their own car and race.
+  \item \textbf{Modules:} registration, inventory, race\_management
+  \item \textbf{Expected:} Two Race objects with correct driver-car pairings.
+  \item \textbf{Actual:} Both races created correctly; \texttt{len(races) == 2}.
+  \item \textbf{Errors:} None.
 \end{itemize}
 
-\vspace{2em}
-\noindent \textbf{Testing Coverage and Completeness:}
-By comprehensively modeling all module edge cases, multi-module coordination routines, and business logic behaviors (including constraints over drivers, mechanics, financial transfers, and duplicate registries), the automated test suite has been augmented to feature \textbf{27 fully-passing Integration tests}. These tests guarantee total cohesive integration reliability.
+%% ── SECTION 5: Results (cross-module) ────────────────────────────────────────
+
+\subsection*{\textcolor{red}{Test 19: Completing a race and verifying results and prize money update the inventory}}
+\begin{itemize}
+  \item \textbf{Scenario:} Complete a race, record result with prize \$1000.
+  \item \textbf{Modules:} race\_management, results, inventory
+  \item \textbf{Expected:} \texttt{inv.cash == 1000}.
+  \item \textbf{Actual:} Initially 0 (prize never reached inventory).
+  \item \textbf{Errors or logical issues:} \textbf{Error 2 (Integration)} — \texttt{results.py} logged the result but never called \texttt{inventory.update\_cash()}, causing all prize money to vanish. Fixed and committed.
+  \item \textbf{Why needed:} Mandatory assignment scenario. Core financial flow between Results and Inventory.
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 20: Multiple race results accumulate cash}}
+\begin{itemize}
+  \item \textbf{Scenario:} Two races, prizes \$500 and \$300.
+  \item \textbf{Modules:} results, inventory
+  \item \textbf{Expected:} \texttt{inv.cash == 800}.
+  \item \textbf{Actual:} 800.
+  \item \textbf{Errors:} None (after Error 2 fix).
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 21: Results module tracks rankings}}
+\begin{itemize}
+  \item \textbf{Scenario:} Alice wins two races.
+  \item \textbf{Modules:} results
+  \item \textbf{Expected:} \texttt{rankings["Alice"] == 2}.
+  \item \textbf{Actual:} 2.
+  \item \textbf{Errors:} None.
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 22: Results history contains all recorded races}}
+\begin{itemize}
+  \item \textbf{Scenario:} Record 3 race results.
+  \item \textbf{Modules:} results
+  \item \textbf{Expected:} \texttt{len(results.history) == 3}.
+  \item \textbf{Actual:} 3.
+  \item \textbf{Errors:} None.
+\end{itemize}
+
+%% ── SECTION 6: MissionPlanning (cross-module) ────────────────────────────────
+
+\subsection*{\textcolor{red}{Test 23: Assigning a mission when correct role is available}}
+\begin{itemize}
+  \item \textbf{Scenario:} Register Bob as mechanic, assign a mechanic mission.
+  \item \textbf{Modules:} registration, mission\_planning
+  \item \textbf{Expected:} \texttt{mission.assigned == True}.
+  \item \textbf{Actual:} True.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Mandatory assignment scenario — validates role-to-mission data flow.
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 24: Mission fails when no crew member has required role}}
+\begin{itemize}
+  \item \textbf{Scenario:} Assign a mechanic mission with no registered mechanics.
+  \item \textbf{Modules:} registration, mission\_planning
+  \item \textbf{Expected:} \texttt{ValueError}.
+  \item \textbf{Actual:} \texttt{ValueError} raised.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Business rule: missions cannot start if required roles are unavailable.
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 25: Mission fails when wrong role is present}}
+\begin{itemize}
+  \item \textbf{Scenario:} Driver present, but mission needs mechanic.
+  \item \textbf{Modules:} registration, mission\_planning
+  \item \textbf{Expected:} \texttt{ValueError}.
+  \item \textbf{Actual:} \texttt{ValueError} raised.
+  \item \textbf{Errors:} None.
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 26: Multi-role mission succeeds when all roles present}}
+\begin{itemize}
+  \item \textbf{Scenario:} Mission requires both driver and mechanic; both registered.
+  \item \textbf{Modules:} registration, mission\_planning
+  \item \textbf{Expected:} \texttt{mission.assigned == True}.
+  \item \textbf{Actual:} True.
+  \item \textbf{Errors:} None.
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 27: Multi-role mission fails if one role missing}}
+\begin{itemize}
+  \item \textbf{Scenario:} Mission needs driver + mechanic; only driver registered.
+  \item \textbf{Modules:} registration, mission\_planning
+  \item \textbf{Expected:} \texttt{ValueError}.
+  \item \textbf{Actual:} \texttt{ValueError} raised.
+  \item \textbf{Errors:} None.
+\end{itemize}
+
+%% ── SECTION 7: Garage (cross-module) ─────────────────────────────────────────
+
+\subsection*{\textcolor{red}{Test 28: Repair car that is in inventory}}
+\begin{itemize}
+  \item \textbf{Scenario:} Add Car1 to inventory, call \texttt{garage.repair\_car("Car1")}.
+  \item \textbf{Modules:} inventory, garage
+  \item \textbf{Expected:} Returns \texttt{"Car1 repaired"}.
+  \item \textbf{Actual:} Correct string returned.
+  \item \textbf{Errors:} None.
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 29: Repair car not in inventory raises ValueError}}
+\begin{itemize}
+  \item \textbf{Scenario:} Call \texttt{garage.repair\_car("CarX")} with empty inventory.
+  \item \textbf{Modules:} inventory, garage
+  \item \textbf{Expected:} \texttt{ValueError}.
+  \item \textbf{Actual:} \texttt{ValueError} raised.
+  \item \textbf{Errors:} None.
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 30: Garage logs all repaired cars}}
+\begin{itemize}
+  \item \textbf{Scenario:} Repair Car1 and Car2 sequentially.
+  \item \textbf{Modules:} inventory, garage
+  \item \textbf{Expected:} Both names appear in \texttt{garage.repairs}.
+  \item \textbf{Actual:} Both present.
+  \item \textbf{Errors:} None.
+\end{itemize}
+
+%% ── SECTION 8: Sponsorship (individual) ──────────────────────────────────────
+
+\subsection*{\textcolor{red}{Test 31: Add sponsors and sum total funds}}
+\begin{itemize}
+  \item \textbf{Scenario:} Add SpeedyOil (\$5000) and TurboFuel (\$3000).
+  \item \textbf{Modules:} sponsorship
+  \item \textbf{Expected:} \texttt{total\_funds() == 8000}.
+  \item \textbf{Actual:} 8000.
+  \item \textbf{Errors:} None.
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 32: Sponsorship starts at zero}}
+\begin{itemize}
+  \item \textbf{Scenario:} Fresh Sponsorship object.
+  \item \textbf{Modules:} sponsorship
+  \item \textbf{Expected:} 0.
+  \item \textbf{Actual:} 0.
+  \item \textbf{Errors:} None.
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 33: Re-adding same sponsor overwrites amount}}
+\begin{itemize}
+  \item \textbf{Scenario:} Add SpeedyOil at \$5000, then again at \$7000.
+  \item \textbf{Modules:} sponsorship
+  \item \textbf{Expected:} \texttt{total\_funds() == 7000} (latest value wins).
+  \item \textbf{Actual:} 7000.
+  \item \textbf{Errors:} None.
+\end{itemize}
+
+%% ── SECTION 9: Multi-module end-to-end scenarios ─────────────────────────────
+
+\subsection*{\textcolor{red}{Test 34: Full workflow — all modules interact correctly}}
+\begin{itemize}
+  \item \textbf{Scenario:} Register crew, assign skills, add car, race, record result, assign mission, repair car, add sponsor.
+  \item \textbf{Modules:} ALL modules
+  \item \textbf{Expected:} \texttt{inv.cash == 2000}, mission assigned, car repaired, sponsor funds correct.
+  \item \textbf{Actual:} All assertions pass.
+  \item \textbf{Errors:} None (after Error 2 fix).
+  \item \textbf{Why needed:} Validates the entire system works end-to-end without module conflicts.
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 35: Sponsorship and race prize money tracked independently}}
+\begin{itemize}
+  \item \textbf{Scenario:} Race prize \$500 and sponsor \$1500 added separately.
+  \item \textbf{Modules:} results, inventory, sponsorship
+  \item \textbf{Expected:} \texttt{inv.cash == 500}, \texttt{sp.total\_funds() == 1500}.
+  \item \textbf{Actual:} Both correct.
+  \item \textbf{Errors:} None.
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 36: Role restrictions — drivers race, mechanics fix cars}}
+\begin{itemize}
+  \item \textbf{Scenario:} Bob (driver) races; Alice (mechanic) cannot race but can do repair missions.
+  \item \textbf{Modules:} registration, race\_management, mission\_planning
+  \item \textbf{Expected:} Bob's race succeeds; Alice's race attempt raises \texttt{ValueError}; mechanic mission succeeds.
+  \item \textbf{Actual:} All correct.
+  \item \textbf{Errors:} None (requires Error 1 fix).
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 37: Damaged-car mission checks mechanic availability}}
+\begin{itemize}
+  \item \textbf{Scenario:} After a race, car is "damaged" — repair mission must verify mechanic exists.
+  \item \textbf{Modules:} registration, race\_management, results, mission\_planning, garage, inventory
+  \item \textbf{Expected:} Mission assigned when mechanic present; \texttt{ValueError} when no mechanic.
+  \item \textbf{Actual:} Both paths behave correctly.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Direct assignment requirement: ``If a car is damaged, a mission requiring a mechanic must check for availability before proceeding.''
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 38: Crew role change affects mission eligibility}}
+\begin{itemize}
+  \item \textbf{Scenario:} Alice starts as driver, then is reassigned to mechanic via CrewManagement.
+  \item \textbf{Modules:} registration, crew\_management, mission\_planning
+  \item \textbf{Expected:} Mechanic mission fails before role change; succeeds after.
+  \item \textbf{Actual:} Both assertions pass.
+  \item \textbf{Errors:} None.
+  \item \textbf{Why needed:} Validates that crew role changes propagate correctly to dependent modules.
+\end{itemize}
+
+\subsection*{\textcolor{red}{Test 39: Duplicate car addition is a known design choice}}
+\begin{itemize}
+  \item \textbf{Scenario:} Add "Car1" to inventory twice.
+  \item \textbf{Modules:} inventory
+  \item \textbf{Expected:} \texttt{inv.cars.count("Car1") == 2} (list allows duplicates by design).
+  \item \textbf{Actual:} 2.
+  \item \textbf{Errors:} No bug — this is a documented design decision. Future work could add a uniqueness check.
+\end{itemize}
+
+% ──────────────────────────────────────────────────────
+\section*{\textcolor{blue}{Errors Found and Fixed}}
+
+\begin{enumerate}
+  \item \textbf{Error 1 (Integration):} \textit{RaceManagement lets non-drivers race.}
+    \texttt{race\_management.py} was missing the \texttt{if member.role != "driver"} check, allowing mechanics and other roles to enter races. Detected by Test 16.
+    Fixed in commit: \texttt{"Error 1 (Integration): Enforce driver role check in race\_management"}.
+
+  \item \textbf{Error 2 (Integration):} \textit{Prize money not credited to Inventory.}
+    \texttt{results.py} logged the race in history and updated rankings but never called \texttt{self.inventory.update\_cash(prize)}, causing all prize money to disappear. Detected by Test 19.
+    Fixed in commit: \texttt{"Error 2 (Integration): Fixed Results module to correctly distribute prize money back to Inventory cash balance"}.
+\end{enumerate}
+
+% ──────────────────────────────────────────────────────
+\section*{\textcolor{blue}{Testing Coverage Summary}}
+
+\begin{center}
+\begin{tabular}{|l|c|}
+\hline
+Module & Tests covering it \\
+\hline
+registration & 1--9, 14--18, 23--27, 34, 36--38 \\
+crew\_management & 6--9, 38 \\
+inventory & 10--13, 17--20, 28--30, 34--35 \\
+race\_management & 14--18, 34, 36--37 \\
+results & 19--22, 34--35, 37 \\
+mission\_planning & 23--27, 34, 36--38 \\
+garage (bonus) & 28--30, 34, 37 \\
+sponsorship (bonus) & 31--33, 35 \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{1em}
+\noindent The 39-test suite covers all six required modules plus both bonus modules. It validates individual module correctness, all six business-rule interactions required by the specification, both integration bugs (Errors 1 and 2), and all four mandatory call-graph scenarios listed in the assignment.
 
 \end{document}
