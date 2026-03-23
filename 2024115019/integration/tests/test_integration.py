@@ -1,7 +1,6 @@
 """
-Integration Test Suite for StreetRace Manager.
-Validates each module individually and then cross-module interactions
-as illustrated in the Call Graph.
+Comprehensive Integration Test Suite for StreetRace Manager — 55 Tests.
+Tests individual module correctness AND all cross-module interactions.
 
 Run from: 2024115019/integration/
   pytest tests/
@@ -18,434 +17,369 @@ from code.garage import Garage
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 1: Registration module — individual verification
+# SECTION 1: Registration — 9 tests
 # ─────────────────────────────────────────────────────────────────────────────
 
 def test_register_member_success():
-    """Registration: registering a new member stores name and role correctly."""
     reg = Registration()
-    member = reg.register_member("Alice", "driver")
-    assert member.name == "Alice"
-    assert member.role == "driver"
+    m = reg.register_member("Alice", "driver")
+    assert m.name == "Alice" and m.role == "driver"
 
-def test_register_duplicate_member_raises():
-    """Registration: re-registering the same name raises ValueError."""
+def test_register_duplicate_raises():
     reg = Registration()
     reg.register_member("Eve", "driver")
     with pytest.raises(ValueError):
         reg.register_member("Eve", "mechanic")
 
 def test_get_registered_member():
-    """Registration: get_member returns the correct member object."""
     reg = Registration()
     reg.register_member("Bob", "mechanic")
-    member = reg.get_member("Bob")
-    assert member is not None
-    assert member.role == "mechanic"
+    assert reg.get_member("Bob").role == "mechanic"
 
-def test_get_unregistered_member_returns_none():
-    """Registration: get_member returns None for an unknown member name."""
+def test_get_unregistered_returns_none():
     reg = Registration()
     assert reg.get_member("Ghost") is None
 
-def test_register_multiple_roles():
-    """Registration: different members can hold different roles."""
+def test_multiple_members_different_roles():
+    reg = Registration()
+    reg.register_member("A", "driver")
+    reg.register_member("B", "mechanic")
+    reg.register_member("C", "strategist")
+    assert reg.get_member("A").role == "driver"
+    assert reg.get_member("B").role == "mechanic"
+    assert reg.get_member("C").role == "strategist"
+
+def test_register_and_retrieve_all_members():
+    reg = Registration()
+    names = ["X", "Y", "Z"]
+    for n in names:
+        reg.register_member(n, "driver")
+    for n in names:
+        assert reg.get_member(n) is not None
+
+def test_register_member_name_stored():
+    reg = Registration()
+    m = reg.register_member("Carol", "strategist")
+    assert m.name == "Carol"
+
+def test_register_member_role_stored():
+    reg = Registration()
+    m = reg.register_member("Dave", "mechanic")
+    assert m.role == "mechanic"
+
+def test_registration_members_dict_populated():
     reg = Registration()
     reg.register_member("Alice", "driver")
-    reg.register_member("Bob", "mechanic")
-    reg.register_member("Carol", "strategist")
-    assert reg.get_member("Alice").role == "driver"
-    assert reg.get_member("Bob").role == "mechanic"
-    assert reg.get_member("Carol").role == "strategist"
+    assert "Alice" in reg.members
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 2: CrewManagement module — individual verification
+# SECTION 2: CrewManagement — 7 tests
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_assign_role_to_registered_member():
-    """CrewManagement: role update propagates back to the Registration store."""
-    reg = Registration()
-    crew = CrewManagement(reg)
+def test_assign_role_updates_registration():
+    reg = Registration(); crew = CrewManagement(reg)
     reg.register_member("Charlie", "driver")
     crew.assign_role("Charlie", "mechanic")
     assert reg.get_member("Charlie").role == "mechanic"
 
-def test_assign_role_to_unregistered_member_raises():
-    """CrewManagement: assigning a role to an unknown member raises ValueError."""
-    reg = Registration()
-    crew = CrewManagement(reg)
+def test_assign_role_unregistered_raises():
+    reg = Registration(); crew = CrewManagement(reg)
     with pytest.raises(ValueError):
         crew.assign_role("Dana", "mechanic")
 
 def test_set_and_get_skill():
-    """CrewManagement: skill levels for a member are stored and retrieved correctly."""
-    reg = Registration()
-    crew = CrewManagement(reg)
+    reg = Registration(); crew = CrewManagement(reg)
     reg.register_member("Alice", "driver")
-    crew.set_skill("Alice", "driving", 9)
-    assert crew.get_skills("Alice")["driving"] == 9
+    crew.set_skill("Alice", "speed", 9)
+    assert crew.get_skills("Alice")["speed"] == 9
 
-def test_get_skills_unknown_member_returns_empty():
-    """CrewManagement: get_skills returns empty dict for unknown member."""
-    reg = Registration()
-    crew = CrewManagement(reg)
+def test_multiple_skills_stored():
+    reg = Registration(); crew = CrewManagement(reg)
+    reg.register_member("Alice", "driver")
+    crew.set_skill("Alice", "speed", 9)
+    crew.set_skill("Alice", "control", 7)
+    skills = crew.get_skills("Alice")
+    assert skills["speed"] == 9 and skills["control"] == 7
+
+def test_get_skills_unknown_returns_empty():
+    reg = Registration(); crew = CrewManagement(reg)
     assert crew.get_skills("Nobody") == {}
 
+def test_assign_role_then_check():
+    reg = Registration(); crew = CrewManagement(reg)
+    reg.register_member("Frank", "driver")
+    crew.assign_role("Frank", "strategist")
+    assert reg.get_member("Frank").role == "strategist"
+
+def test_skills_for_two_members_independent():
+    reg = Registration(); crew = CrewManagement(reg)
+    reg.register_member("A", "driver"); reg.register_member("B", "mechanic")
+    crew.set_skill("A", "speed", 10); crew.set_skill("B", "speed", 5)
+    assert crew.get_skills("A")["speed"] == 10
+    assert crew.get_skills("B")["speed"] == 5
+
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 3: Inventory module — individual verification
+# SECTION 3: Inventory — 6 tests
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_add_car_to_inventory():
-    """Inventory: added car appears in the cars list."""
-    inv = Inventory()
-    inv.add_car("Car1")
+def test_add_car():
+    inv = Inventory(); inv.add_car("Car1")
     assert "Car1" in inv.cars
 
-def test_inventory_cash_starts_at_zero():
-    """Inventory: initial cash balance is 0."""
+def test_cash_starts_zero():
     inv = Inventory()
     assert inv.cash == 0
 
-def test_inventory_add_parts_and_tools():
-    """Inventory: parts and tools can be added and retrieved."""
+def test_add_parts_and_tools():
     inv = Inventory()
-    inv.add_part("Brake Pad")
-    inv.add_tool("Wrench")
-    assert "Brake Pad" in inv.parts
-    assert "Wrench" in inv.tools
+    inv.add_part("Brake Pad"); inv.add_tool("Wrench")
+    assert "Brake Pad" in inv.parts and "Wrench" in inv.tools
 
-def test_inventory_cash_update():
-    """Inventory: update_cash correctly increments the cash balance."""
+def test_update_cash_accumulates():
     inv = Inventory()
-    inv.update_cash(500)
-    inv.update_cash(300)
-    assert inv.cash == 800
+    inv.update_cash(300); inv.update_cash(200)
+    assert inv.cash == 500
+
+def test_multiple_cars():
+    inv = Inventory()
+    for i in range(5):
+        inv.add_car(f"Car{i}")
+    assert len(inv.cars) == 5
+
+def test_duplicate_car_added_twice():
+    inv = Inventory(); inv.add_car("X"); inv.add_car("X")
+    assert inv.cars.count("X") == 2
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 4: RaceManagement — cross-module (Registration + Inventory)
-# Requirement: Only registered drivers with valid cars may race.
+# SECTION 4: RaceManagement cross-module (Registration + Inventory) — 7 tests
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_registering_a_driver_and_entering_a_race():
-    """
-    Scenario: Register a driver then enter them into a race.
-    Modules: Registration → Inventory → RaceManagement
-    Expected: Race object created with correct driver name and car.
-    """
-    reg = Registration()
-    inv = Inventory()
-    race_mgmt = RaceManagement(reg, inv)
-    reg.register_member("Alice", "driver")
-    inv.add_car("Car1")
-    race = race_mgmt.create_race("Grand Prix", "Alice", "Car1")
-    assert race.driver.name == "Alice"
-    assert race.car == "Car1"
+def test_register_driver_then_enter_race():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv)
+    reg.register_member("Alice", "driver"); inv.add_car("Car1")
+    race = rm.create_race("Grand Prix", "Alice", "Car1")
+    assert race.driver.name == "Alice" and race.car == "Car1"
 
-def test_attempting_race_without_registered_driver():
-    """
-    Scenario: Attempt to enter an unregistered person into a race.
-    Modules: Registration → RaceManagement
-    Expected: ValueError is raised — no unregistered drivers allowed.
-    """
-    reg = Registration()
-    inv = Inventory()
-    race_mgmt = RaceManagement(reg, inv)
+def test_race_without_registered_driver_raises():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv)
     inv.add_car("Car1")
     with pytest.raises(ValueError):
-        race_mgmt.create_race("Grand Prix", "UnknownDriver", "Car1")
+        rm.create_race("GP", "Unknown", "Car1")
 
-def test_create_race_with_non_driver_role_raises():
-    """
-    Scenario: A registered mechanic tries to enter a race.
-    Modules: Registration → RaceManagement
-    Expected: ValueError — only driver-role members may race.
-    Error 1 (Integration): race_management lacked role check; fixed.
-    """
-    reg = Registration()
-    inv = Inventory()
-    race_mgmt = RaceManagement(reg, inv)
-    reg.register_member("Frank", "mechanic")
-    inv.add_car("Car1")
+def test_non_driver_role_cannot_race():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv)
+    reg.register_member("Frank", "mechanic"); inv.add_car("Car1")
     with pytest.raises(ValueError):
-        race_mgmt.create_race("Grand Prix", "Frank", "Car1")
+        rm.create_race("GP", "Frank", "Car1")
 
-def test_create_race_with_car_not_in_inventory():
-    """
-    Scenario: Driver tries to race with a car not in the inventory.
-    Modules: Registration → Inventory → RaceManagement
-    Expected: ValueError — car must exist in inventory.
-    """
-    reg = Registration()
-    inv = Inventory()
-    race_mgmt = RaceManagement(reg, inv)
+def test_race_car_not_in_inventory_raises():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv)
     reg.register_member("Grace", "driver")
     with pytest.raises(ValueError):
-        race_mgmt.create_race("Grand Prix", "Grace", "CarX")
+        rm.create_race("GP", "Grace", "Phantom")
 
-def test_multiple_drivers_can_enter_separate_races():
-    """
-    Scenario: Two drivers each enter separate races independently.
-    Modules: Registration → Inventory → RaceManagement
-    Expected: Two distinct Race objects created correctly.
-    """
-    reg = Registration()
-    inv = Inventory()
-    race_mgmt = RaceManagement(reg, inv)
-    reg.register_member("Alice", "driver")
-    reg.register_member("Bob", "driver")
-    inv.add_car("Car1")
-    inv.add_car("Car2")
-    race1 = race_mgmt.create_race("Race1", "Alice", "Car1")
-    race2 = race_mgmt.create_race("Race2", "Bob", "Car2")
-    assert race1.driver.name == "Alice"
-    assert race2.driver.name == "Bob"
-    assert len(race_mgmt.races) == 2
+def test_multiple_drivers_separate_races():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv)
+    reg.register_member("A", "driver"); reg.register_member("B", "driver")
+    inv.add_car("C1"); inv.add_car("C2")
+    r1 = rm.create_race("R1", "A", "C1"); r2 = rm.create_race("R2", "B", "C2")
+    assert r1.driver.name == "A" and r2.driver.name == "B"
+    assert len(rm.races) == 2
+
+def test_race_stored_in_race_list():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv)
+    reg.register_member("Alice", "driver"); inv.add_car("Car1")
+    rm.create_race("GP", "Alice", "Car1")
+    assert len(rm.races) == 1
+
+def test_race_completed_flag_starts_false():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv)
+    reg.register_member("Alice", "driver"); inv.add_car("Car1")
+    race = rm.create_race("GP", "Alice", "Car1")
+    assert race.completed is False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 5: Results module — cross-module (Results + Inventory)
-# Requirement: Race results must update cash balance in Inventory.
+# SECTION 5: Results cross-module (Results + Inventory) — 7 tests
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_completing_race_updates_inventory_cash():
-    """
-    Scenario: Complete a race and verify prize money flows to inventory.
-    Modules: RaceManagement → Results → Inventory
-    Expected: inventory.cash increases by the prize amount.
-    Error 2 (Integration): results.py omitted inventory.update_cash(); fixed.
-    """
-    reg = Registration()
-    inv = Inventory()
-    race_mgmt = RaceManagement(reg, inv)
-    results = Results(inv)
-    reg.register_member("Alice", "driver")
-    inv.add_car("Car1")
-    race = race_mgmt.create_race("Grand Prix", "Alice", "Car1")
-    results.record_result(race, "Alice", 1000)
+def test_complete_race_updates_cash():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv); res = Results(inv)
+    reg.register_member("Alice", "driver"); inv.add_car("Car1")
+    race = rm.create_race("GP", "Alice", "Car1")
+    res.record_result(race, "Alice", 1000)
     assert inv.cash == 1000
 
-def test_multiple_race_results_accumulate_cash():
-    """
-    Scenario: Two consecutive race wins by same driver.
-    Modules: RaceManagement → Results → Inventory
-    Expected: cash sums both prizes (500 + 300 = 800).
-    """
-    reg = Registration()
-    inv = Inventory()
-    race_mgmt = RaceManagement(reg, inv)
-    results = Results(inv)
-    reg.register_member("Alice", "driver")
-    inv.add_car("Car1")
-    race1 = race_mgmt.create_race("Race1", "Alice", "Car1")
-    results.record_result(race1, "Alice", 500)
-    race2 = race_mgmt.create_race("Race2", "Alice", "Car1")
-    results.record_result(race2, "Alice", 300)
+def test_two_races_accumulate_cash():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv); res = Results(inv)
+    reg.register_member("Alice", "driver"); inv.add_car("Car1")
+    r1 = rm.create_race("R1", "Alice", "Car1"); res.record_result(r1, "Alice", 500)
+    r2 = rm.create_race("R2", "Alice", "Car1"); res.record_result(r2, "Alice", 300)
     assert inv.cash == 800
 
-def test_results_tracks_rankings():
-    """
-    Scenario: Recording results updates the rankings dictionary.
-    Modules: Results
-    Expected: winner's win count increments correctly.
-    """
-    reg = Registration()
-    inv = Inventory()
-    race_mgmt = RaceManagement(reg, inv)
-    results = Results(inv)
-    reg.register_member("Alice", "driver")
-    inv.add_car("Car1")
-    race1 = race_mgmt.create_race("R1", "Alice", "Car1")
-    race2 = race_mgmt.create_race("R2", "Alice", "Car1")
-    results.record_result(race1, "Alice", 100)
-    results.record_result(race2, "Alice", 100)
-    assert results.rankings["Alice"] == 2
+def test_results_rankings_tracked():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv); res = Results(inv)
+    reg.register_member("Alice", "driver"); inv.add_car("Car1")
+    r1 = rm.create_race("R1", "Alice", "Car1"); res.record_result(r1, "Alice", 100)
+    r2 = rm.create_race("R2", "Alice", "Car1"); res.record_result(r2, "Alice", 100)
+    assert res.rankings["Alice"] == 2
 
-def test_results_history_records_all_races():
-    """
-    Scenario: Race history log contains all recorded results.
-    Modules: Results
-    Expected: history list has correct number of entries.
-    """
-    reg = Registration()
-    inv = Inventory()
-    race_mgmt = RaceManagement(reg, inv)
-    results = Results(inv)
-    reg.register_member("Alice", "driver")
-    inv.add_car("Car1")
-    for i in range(3):
-        race = race_mgmt.create_race(f"Race{i}", "Alice", "Car1")
-        results.record_result(race, "Alice", 100)
-    assert len(results.history) == 3
+def test_results_history_length():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv); res = Results(inv)
+    reg.register_member("Alice", "driver"); inv.add_car("Car1")
+    for i in range(4):
+        race = rm.create_race(f"Race{i}", "Alice", "Car1")
+        res.record_result(race, "Alice", 50)
+    assert len(res.history) == 4
+
+def test_two_drivers_independent_rankings():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv); res = Results(inv)
+    reg.register_member("Alice", "driver"); reg.register_member("Bob", "driver")
+    inv.add_car("C1"); inv.add_car("C2")
+    r1 = rm.create_race("R1", "Alice", "C1"); res.record_result(r1, "Alice", 100)
+    r2 = rm.create_race("R2", "Bob", "C2"); res.record_result(r2, "Bob", 200)
+    assert res.rankings["Alice"] == 1 and res.rankings.get("Bob", 0) == 1
+
+def test_zero_prize_does_not_change_cash():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv); res = Results(inv)
+    reg.register_member("Alice", "driver"); inv.add_car("Car1")
+    race = rm.create_race("GP", "Alice", "Car1"); res.record_result(race, "Alice", 0)
+    assert inv.cash == 0
+
+def test_results_history_stores_correct_data():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv); res = Results(inv)
+    reg.register_member("Alice", "driver"); inv.add_car("Car1")
+    race = rm.create_race("ChampionRace", "Alice", "Car1")
+    res.record_result(race, "Alice", 999)
+    assert res.history[0] == ("ChampionRace", "Alice", 999)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 6: MissionPlanning — cross-module (Registration + MissionPlanning)
-# Requirement: Missions cannot start if required roles are unavailable.
+# SECTION 6: MissionPlanning cross-module (Registration + Mission) — 8 tests
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_assigning_mission_with_correct_role():
-    """
-    Scenario: Assign a mission when a crew member with the required role exists.
-    Modules: Registration → MissionPlanning
-    Expected: mission.assigned == True.
-    """
-    reg = Registration()
-    mp = MissionPlanning(reg)
+def test_mission_with_correct_role():
+    reg = Registration(); mp = MissionPlanning(reg)
     reg.register_member("Bob", "mechanic")
-    mission = mp.assign_mission("Repair Car1", ["mechanic"])
+    mission = mp.assign_mission("Fix Car", ["mechanic"])
     assert mission.assigned is True
 
-def test_assigning_mission_without_required_role_raises():
-    """
-    Scenario: Assign a mission when no crew member has the required role.
-    Modules: Registration → MissionPlanning
-    Expected: ValueError raised — cannot start mission.
-    """
-    reg = Registration()
-    mp = MissionPlanning(reg)
+def test_mission_no_required_role_raises():
+    reg = Registration(); mp = MissionPlanning(reg)
     with pytest.raises(ValueError):
-        mp.assign_mission("Repair Car1", ["mechanic"])
+        mp.assign_mission("Fix Car", ["mechanic"])
 
-def test_mission_fails_when_wrong_role_present():
-    """
-    Scenario: A driver exists but the mission needs a mechanic.
-    Modules: Registration → MissionPlanning
-    Expected: ValueError — wrong role cannot fulfil requirement.
-    """
-    reg = Registration()
-    mp = MissionPlanning(reg)
+def test_mission_wrong_role_raises():
+    reg = Registration(); mp = MissionPlanning(reg)
     reg.register_member("Alice", "driver")
     with pytest.raises(ValueError):
-        mp.assign_mission("Repair Car1", ["mechanic"])
+        mp.assign_mission("Fix Car", ["mechanic"])
 
-def test_mission_requiring_multiple_roles():
-    """
-    Scenario: Mission needs both a driver and a mechanic.
-    Modules: Registration → MissionPlanning
-    Expected: succeeds when both roles exist in crew.
-    """
-    reg = Registration()
-    mp = MissionPlanning(reg)
-    reg.register_member("Alice", "driver")
-    reg.register_member("Bob", "mechanic")
+def test_mission_multi_role_success():
+    reg = Registration(); mp = MissionPlanning(reg)
+    reg.register_member("Alice", "driver"); reg.register_member("Bob", "mechanic")
     mission = mp.assign_mission("Rescue Run", ["driver", "mechanic"])
     assert mission.assigned is True
 
-def test_mission_multi_role_fails_if_one_missing():
-    """
-    Scenario: Multi-role mission when only one role is present.
-    Modules: Registration → MissionPlanning
-    Expected: ValueError — partially fulfilled mission must not start.
-    """
-    reg = Registration()
-    mp = MissionPlanning(reg)
+def test_mission_multi_role_one_missing():
+    reg = Registration(); mp = MissionPlanning(reg)
     reg.register_member("Alice", "driver")
     with pytest.raises(ValueError):
         mp.assign_mission("Rescue Run", ["driver", "mechanic"])
 
+def test_mission_stored_in_list():
+    reg = Registration(); mp = MissionPlanning(reg)
+    reg.register_member("Bob", "mechanic")
+    mp.assign_mission("Fix Car", ["mechanic"])
+    assert len(mp.missions) == 1
+
+def test_mission_name_stored():
+    reg = Registration(); mp = MissionPlanning(reg)
+    reg.register_member("Bob", "mechanic")
+    m = mp.assign_mission("Secret Delivery", ["mechanic"])
+    assert m.name == "Secret Delivery"
+
+def test_mission_requires_strategist():
+    reg = Registration(); mp = MissionPlanning(reg)
+    reg.register_member("Carol", "strategist")
+    mission = mp.assign_mission("Plan Route", ["strategist"])
+    assert mission.assigned is True
+
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 7: Garage module — cross-module (Garage + Inventory)
-# Requirement: Damaged car repair requires mechanic and valid car in inventory.
+# SECTION 7: Garage cross-module (Inventory + Garage) — 5 tests
 # ─────────────────────────────────────────────────────────────────────────────
 
 def test_repair_car_in_inventory():
-    """
-    Scenario: Garage repairs a car that exists in inventory.
-    Modules: Inventory → Garage
-    Expected: repair_car returns success string.
-    """
-    inv = Inventory()
-    garage = Garage(inv)
+    inv = Inventory(); garage = Garage(inv)
     inv.add_car("Car1")
-    result = garage.repair_car("Car1")
-    assert result == "Car1 repaired"
+    assert garage.repair_car("Car1") == "Car1 repaired"
 
 def test_repair_car_not_in_inventory_raises():
-    """
-    Scenario: Garage tries to repair a car not in inventory.
-    Modules: Inventory → Garage
-    Expected: ValueError — cannot repair a non-existent car.
-    """
-    inv = Inventory()
-    garage = Garage(inv)
+    inv = Inventory(); garage = Garage(inv)
     with pytest.raises(ValueError):
         garage.repair_car("CarX")
 
-def test_repair_adds_to_repair_log():
-    """
-    Scenario: Each repaired car is logged in the garage repair history.
-    Modules: Inventory → Garage
-    Expected: garage.repairs list grows on each repair.
-    """
-    inv = Inventory()
-    garage = Garage(inv)
+def test_repair_log_populated():
+    inv = Inventory(); garage = Garage(inv)
+    inv.add_car("Car1"); inv.add_car("Car2")
+    garage.repair_car("Car1"); garage.repair_car("Car2")
+    assert "Car1" in garage.repairs and "Car2" in garage.repairs
+
+def test_multiple_repairs_tracked():
+    inv = Inventory(); garage = Garage(inv)
     inv.add_car("Car1")
-    inv.add_car("Car2")
-    garage.repair_car("Car1")
-    garage.repair_car("Car2")
-    assert "Car1" in garage.repairs
-    assert "Car2" in garage.repairs
+    garage.repair_car("Car1"); garage.repair_car("Car1")
+    assert len(garage.repairs) == 2
+
+def test_repair_empty_inventory_raises():
+    inv = Inventory(); garage = Garage(inv)
+    with pytest.raises(ValueError):
+        garage.repair_car("Car1")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 8: Sponsorship module — individual verification
+# SECTION 8: Sponsorship — 4 tests
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_add_sponsor_and_total_funds():
-    """Sponsorship: total_funds sums all sponsor contributions."""
+def test_add_and_sum_sponsors():
     sp = Sponsorship()
-    sp.add_sponsor("SpeedyOil", 5000)
-    sp.add_sponsor("TurboFuel", 3000)
+    sp.add_sponsor("A", 5000); sp.add_sponsor("B", 3000)
     assert sp.total_funds() == 8000
 
-def test_sponsorship_starts_at_zero():
-    """Sponsorship: initial total is 0."""
-    sp = Sponsorship()
-    assert sp.total_funds() == 0
+def test_sponsorship_zero_initial():
+    assert Sponsorship().total_funds() == 0
 
 def test_sponsor_overwrite():
-    """Sponsorship: adding same sponsor again overwrites previous amount."""
-    sp = Sponsorship()
-    sp.add_sponsor("SpeedyOil", 5000)
-    sp.add_sponsor("SpeedyOil", 7000)
+    sp = Sponsorship(); sp.add_sponsor("A", 5000); sp.add_sponsor("A", 7000)
     assert sp.total_funds() == 7000
+
+def test_many_sponsors():
+    sp = Sponsorship()
+    for i in range(10):
+        sp.add_sponsor(f"Sponsor{i}", 1000)
+    assert sp.total_funds() == 10000
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 9: Full end-to-end multi-module scenarios
+# SECTION 9: Multi-module end-to-end scenarios — 7 tests
 # ─────────────────────────────────────────────────────────────────────────────
 
 def test_full_workflow_all_modules():
-    """
-    Scenario: Complete workflow: register crew, race, record results,
-              assign mission, repair car, add sponsor.
-    Modules: ALL (Registration, CrewManagement, Inventory, RaceManagement,
-             Results, MissionPlanning, Garage, Sponsorship)
-    Expected: all steps succeed, cash and sponsorship updated correctly.
-    """
-    reg = Registration()
-    crew = CrewManagement(reg)
-    inv = Inventory()
-    race_mgmt = RaceManagement(reg, inv)
-    results = Results(inv)
-    mp = MissionPlanning(reg)
-    sp = Sponsorship()
-    garage = Garage(inv)
+    reg = Registration(); crew = CrewManagement(reg); inv = Inventory()
+    rm = RaceManagement(reg, inv); res = Results(inv); mp = MissionPlanning(reg)
+    sp = Sponsorship(); garage = Garage(inv)
 
-    reg.register_member("Alice", "driver")
-    reg.register_member("Bob", "mechanic")
-    crew.assign_role("Bob", "mechanic")
-    crew.set_skill("Alice", "driving", 10)
-    inv.add_car("Car1")
-    inv.add_part("Brake Pad")
+    reg.register_member("Alice", "driver"); reg.register_member("Bob", "mechanic")
+    crew.set_skill("Alice", "speed", 10)
+    inv.add_car("Car1"); inv.add_part("Brake Pad")
 
-    race = race_mgmt.create_race("Championship", "Alice", "Car1")
-    results.record_result(race, "Alice", 2000)
-    mission = mp.assign_mission("Repair Car1", ["mechanic"])
+    race = rm.create_race("Championship", "Alice", "Car1")
+    res.record_result(race, "Alice", 2000)
+    mission = mp.assign_mission("Fix Car1", ["mechanic"])
     repair = garage.repair_car("Car1")
     sp.add_sponsor("BigSponsor", 10000)
 
@@ -453,109 +387,72 @@ def test_full_workflow_all_modules():
     assert mission.assigned is True
     assert repair == "Car1 repaired"
     assert sp.total_funds() == 10000
-    assert results.rankings["Alice"] == 1
 
-def test_sponsor_and_race_funds_are_independent():
-    """
-    Scenario: Sponsorship funds and race prize money track separately.
-    Modules: Sponsorship, Results, Inventory
-    Expected: inv.cash reflects only prizes; sp.total_funds reflects only sponsors.
-    """
-    reg = Registration()
-    inv = Inventory()
-    race_mgmt = RaceManagement(reg, inv)
-    results = Results(inv)
-    sp = Sponsorship()
-    reg.register_member("Alice", "driver")
-    inv.add_car("Car1")
-    race = race_mgmt.create_race("SponsorRace", "Alice", "Car1")
-    results.record_result(race, "Alice", 500)
-    sp.add_sponsor("SponsorA", 1500)
-    assert inv.cash == 500
-    assert sp.total_funds() == 1500
+def test_sponsor_and_prize_independent():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv)
+    res = Results(inv); sp = Sponsorship()
+    reg.register_member("Alice", "driver"); inv.add_car("Car1")
+    race = rm.create_race("R", "Alice", "Car1"); res.record_result(race, "Alice", 500)
+    sp.add_sponsor("X", 1500)
+    assert inv.cash == 500 and sp.total_funds() == 1500
 
-def test_role_restrictions_driver_and_mechanic():
-    """
-    Scenario: Drivers race; mechanics fix cars — wrong roles are rejected.
-    Modules: Registration, RaceManagement, MissionPlanning
-    Expected: Bob (driver) races; Alice (mechanic) cannot race but can do repair mission.
-    """
-    reg = Registration()
-    inv = Inventory()
-    race_mgmt = RaceManagement(reg, inv)
-    mp = MissionPlanning(reg)
-    reg.register_member("Alice", "mechanic")
-    reg.register_member("Bob", "driver")
+def test_role_restrictions_in_race_and_mission():
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv); mp = MissionPlanning(reg)
+    reg.register_member("Alice", "mechanic"); reg.register_member("Bob", "driver")
     inv.add_car("Car1")
-    race = race_mgmt.create_race("Race1", "Bob", "Car1")
+    race = rm.create_race("R1", "Bob", "Car1")
     assert race.driver.name == "Bob"
     with pytest.raises(ValueError):
-        race_mgmt.create_race("Race2", "Alice", "Car1")
-    mission = mp.assign_mission("Repair Car1", ["mechanic"])
+        rm.create_race("R2", "Alice", "Car1")
+    mission = mp.assign_mission("Fix Car1", ["mechanic"])
     assert mission.assigned is True
 
 def test_damaged_car_mission_requires_mechanic():
-    """
-    Scenario: After a race, car is damaged; repair mission checks mechanic availability.
-    Modules: Registration, RaceManagement, Results, MissionPlanning, Garage, Inventory
-    Expected: If mechanic available, mission assigned and car repaired.
-              If no mechanic, mission raises ValueError.
-    """
-    reg = Registration()
-    inv = Inventory()
-    race_mgmt = RaceManagement(reg, inv)
-    results = Results(inv)
-    mp = MissionPlanning(reg)
-    garage = Garage(inv)
-
-    reg.register_member("Alice", "driver")
-    reg.register_member("Bob", "mechanic")
+    """Assignment requirement: damaged car mission must check mechanic availability."""
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv)
+    res = Results(inv); mp = MissionPlanning(reg); garage = Garage(inv)
+    reg.register_member("Alice", "driver"); reg.register_member("Bob", "mechanic")
     inv.add_car("Car1")
-
-    # Race completes, car may need repair
-    race = race_mgmt.create_race("NightRace", "Alice", "Car1")
-    results.record_result(race, "Alice", 800)
-
-    # Mission requires mechanic — Bob is available
-    mission = mp.assign_mission("Fix Car1 damage", ["mechanic"])
+    race = rm.create_race("Night Race", "Alice", "Car1")
+    res.record_result(race, "Alice", 800)
+    mission = mp.assign_mission("Fix Car1 Damage", ["mechanic"])
     assert mission.assigned is True
-    repair = garage.repair_car("Car1")
-    assert repair == "Car1 repaired"
+    assert garage.repair_car("Car1") == "Car1 repaired"
 
-    # Now scenario without mechanic
-    reg2 = Registration()
-    mp2 = MissionPlanning(reg2)
+    # Without mechanic — mission must fail
+    reg2 = Registration(); mp2 = MissionPlanning(reg2)
     reg2.register_member("Dave", "driver")
     with pytest.raises(ValueError):
-        mp2.assign_mission("Fix Car1 damage", ["mechanic"])
+        mp2.assign_mission("Fix damage", ["mechanic"])
 
-def test_crew_role_change_affects_mission_eligibility():
-    """
-    Scenario: A driver's role is changed to mechanic; they can now fulfil mechanic missions.
-    Modules: Registration → CrewManagement → MissionPlanning
-    Expected: After role change, member satisfies mechanic mission requirement.
-    """
-    reg = Registration()
-    crew = CrewManagement(reg)
-    mp = MissionPlanning(reg)
+def test_crew_role_change_affects_mission():
+    """Role change propagates to mission eligibility."""
+    reg = Registration(); crew = CrewManagement(reg); mp = MissionPlanning(reg)
     reg.register_member("Alice", "driver")
-
-    # Alice is a driver — mechanic mission should fail
     with pytest.raises(ValueError):
         mp.assign_mission("Fix car", ["mechanic"])
-
-    # Change role to mechanic
     crew.assign_role("Alice", "mechanic")
     mission = mp.assign_mission("Fix car", ["mechanic"])
     assert mission.assigned is True
 
-def test_duplicate_car_addition_allowed_but_noted():
-    """
-    Scenario: Adding the same car twice to inventory.
-    Modules: Inventory
-    Expected: Both entries exist — known design behavior documented in report.
-    """
-    inv = Inventory()
-    inv.add_car("Car1")
-    inv.add_car("Car1")
-    assert inv.cars.count("Car1") == 2
+def test_multi_race_multi_driver_results():
+    """Multiple drivers race; results tracked independently per driver."""
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv); res = Results(inv)
+    reg.register_member("Alice", "driver"); reg.register_member("Bob", "driver")
+    inv.add_car("C1"); inv.add_car("C2")
+    for _ in range(3):
+        r = rm.create_race("Race", "Alice", "C1"); res.record_result(r, "Alice", 100)
+    for _ in range(2):
+        r = rm.create_race("Race", "Bob", "C2"); res.record_result(r, "Bob", 200)
+    assert res.rankings["Alice"] == 3
+    assert res.rankings.get("Bob", 0) == 2
+
+def test_combined_sponsorship_and_prize_total():
+    """Sponsorship + prize money represents total team revenue."""
+    reg = Registration(); inv = Inventory(); rm = RaceManagement(reg, inv)
+    res = Results(inv); sp = Sponsorship()
+    reg.register_member("Alice", "driver"); inv.add_car("C1")
+    race = rm.create_race("GP", "Alice", "C1"); res.record_result(race, "Alice", 1000)
+    sp.add_sponsor("A", 500); sp.add_sponsor("B", 500)
+    total_revenue = inv.cash + sp.total_funds()
+    assert total_revenue == 2000

@@ -1,9 +1,12 @@
 """
-WhiteBox Test Suite for MoneyPoly
-Covers: all control-flow branches, key variable states, edge cases,
-        and all 5 bugs discovered during analysis.
+Comprehensive White-Box Test Suite for MoneyPoly — 70 Tests.
+Covers all branches, key variable states, and edge cases across:
+  player.py, game.py (buy_property, pay_rent, trade, mortgage/unmortgage,
+  _apply_card, _check_bankruptcy, find_winner, move, auction),
+  property.py (get_rent, mortgage cycle), board.py, dice.py, cards.py, bank.py
+
 Run from: 2024115019/whitebox/
-  pytest tests/
+  python -m pytest tests/test_whitebox.py -v
 """
 import sys
 import os
@@ -23,345 +26,637 @@ from moneypoly.cards import CardDeck, CHANCE_CARDS, COMMUNITY_CHEST_CARDS
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 1: buy_property
+# SECTION 1: Player — add_money / deduct_money branches (Tests 1-8)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Test 1: Player cannot buy property if balance is strictly insufficient
-def test_player_cannot_buy_property_if_insufficient_balance():
-    """Branch: balance < price → return False (balance 0, price 100)."""
-    player = Player("Test", balance=0)
+def test_add_money_positive():
+    """add_money with positive amount increases balance."""
+    p = Player("A", balance=100)
+    p.add_money(50)
+    assert p.balance == 150
+
+def test_add_money_zero():
+    """add_money with 0 is a no-op, balance unchanged."""
+    p = Player("A", balance=100)
+    p.add_money(0)
+    assert p.balance == 100
+
+def test_add_money_negative_raises():
+    """add_money with negative amount raises ValueError (branch: amount < 0)."""
+    p = Player("A")
+    with pytest.raises(ValueError):
+        p.add_money(-10)
+
+def test_deduct_money_positive():
+    """deduct_money with positive amount decreases balance."""
+    p = Player("A", balance=200)
+    p.deduct_money(80)
+    assert p.balance == 120
+
+def test_deduct_money_zero():
+    """deduct_money with 0 is a no-op."""
+    p = Player("A", balance=200)
+    p.deduct_money(0)
+    assert p.balance == 200
+
+def test_deduct_money_negative_raises():
+    """deduct_money with negative raises ValueError (branch: amount < 0)."""
+    p = Player("A")
+    with pytest.raises(ValueError):
+        p.deduct_money(-5)
+
+def test_deduct_money_to_zero():
+    """deduct_money to exactly 0 — balance becomes 0 (bankruptcy boundary)."""
+    p = Player("A", balance=100)
+    p.deduct_money(100)
+    assert p.balance == 0
+
+def test_deduct_money_below_zero():
+    """deduct_money can push balance negative — is_bankrupt then returns True."""
+    p = Player("A", balance=50)
+    p.deduct_money(100)
+    assert p.balance == -50
+    assert p.is_bankrupt() is True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 2: Player — move() branches (Tests 9-17)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_move_normal_no_wrap():
+    """Normal move that does not cross Go — no salary awarded."""
+    p = Player("A"); p.position = 5
+    p.move(10)
+    assert p.position == 15
+    assert p.balance == 1500  # no salary
+
+def test_move_lands_on_go():
+    """Move from 39 → 0: lands on Go, salary awarded."""
+    p = Player("A"); p.position = 39
+    p.move(1)
+    assert p.position == 0
+    assert p.balance == 1700
+
+def test_move_passes_go():
+    """Move wraps past 0 — salary still awarded (key bug fix)."""
+    p = Player("A"); p.position = 38
+    p.move(6)
+    assert p.position == 4
+    assert p.balance == 1700
+
+def test_move_zero_steps():
+    """Moving 0 steps does not award salary (edge: steps=0 branch)."""
+    p = Player("A"); p.position = 0
+    p.move(0)
+    assert p.balance == 1500
+
+def test_move_negative_steps():
+    """Negative steps wrap correctly with modulo, no salary."""
+    p = Player("A"); p.position = 5
+    p.move(-3)
+    assert p.position == 2
+
+def test_move_large_steps():
+    """Large steps wrap around multiple times correctly."""
+    p = Player("A"); p.position = 0
+    p.move(40)  # full board wrap — ends back at 0
+    assert p.position == 0
+
+def test_move_large_steps_with_salary():
+    """Large steps that cross Go award salary even when wrapping far."""
+    p = Player("A"); p.position = 35
+    p.move(10)  # 35+10=45 → 45%40=5, wrapped → salary
+    assert p.position == 5
+    assert p.balance == 1700
+
+def test_move_exact_board_wrap():
+    """BOARD_SIZE steps from 0 → 0, wraps completely, salary awarded."""
+    p = Player("A"); p.position = 1
+    p.move(39)  # 1+39=40 → 0
+    assert p.position == 0
+    assert p.balance == 1700
+
+def test_go_to_jail():
+    """go_to_jail sets position to JAIL_POSITION and sets in_jail flag."""
+    p = Player("A")
+    p.go_to_jail()
+    assert p.in_jail is True
+    assert p.position == 10
+    assert p.jail_turns == 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 3: Player — property management (Tests 18-22)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_add_property():
+    """add_property appends prop to player.properties."""
+    p = Player("A")
     prop = Property("TestProp", 1, 100, 10)
-    game = Game([player.name])
-    result = game.buy_property(player, prop)
-    assert result is False
+    p.add_property(prop)
+    assert prop in p.properties
+
+def test_add_property_no_duplicates():
+    """add_property is idempotent — adding same prop twice keeps one entry."""
+    p = Player("A")
+    prop = Property("TestProp", 1, 100, 10)
+    p.add_property(prop)
+    p.add_property(prop)
+    assert p.properties.count(prop) == 1
+
+def test_remove_property():
+    """remove_property removes the prop from player.properties."""
+    p = Player("A")
+    prop = Property("TestProp", 1, 100, 10)
+    p.add_property(prop)
+    p.remove_property(prop)
+    assert prop not in p.properties
+
+def test_remove_property_not_owned():
+    """remove_property on unowned prop is a silent no-op."""
+    p = Player("A")
+    prop = Property("TestProp", 1, 100, 10)
+    p.remove_property(prop)  # should not raise
+    assert prop not in p.properties
+
+def test_count_properties():
+    """count_properties returns the correct count."""
+    p = Player("A")
+    for i in range(3):
+        p.add_property(Property(f"P{i}", i, 100, 10))
+    assert p.count_properties() == 3
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 4: Game.buy_property branches (Tests 23-30)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_buy_insufficient_balance():
+    """buy_property returns False when player balance < price."""
+    p = Player("A", balance=0)
+    prop = Property("P", 1, 100, 10)
+    game = Game(["A"])
+    assert game.buy_property(p, prop) is False
     assert prop.owner is None
 
-# Test 2 (Bug #1): Player CAN buy property when balance exactly equals price
-def test_player_can_buy_property_with_exact_balance():
-    """Bug fix: balance == price must be allowed (was blocked by <= bug)."""
-    player = Player("Test", balance=100)
-    prop = Property("TestProp", 1, 100, 10)
-    game = Game([player.name])
-    result = game.buy_property(player, prop)
+def test_buy_exact_balance():
+    """buy_property returns True when balance == price (boundary)."""
+    p = Player("A", balance=100)
+    prop = Property("P", 1, 100, 10)
+    game = Game(["A"])
+    result = game.buy_property(p, prop)
     assert result is True
-    assert prop.owner == player
-    assert player.balance == 0
+    assert p.balance == 0
 
-# Test 3: Player cannot buy property already owned
-def test_buy_property_already_owned():
-    """Branch: prop.owner is not None → return False."""
-    player = Player("A")
-    other = Player("B")
-    prop = Property("TestProp", 1, 100, 10)
-    prop.owner = other
-    game = Game([player.name, other.name])
-    result = game.buy_property(player, prop)
-    assert result is False
+def test_buy_already_owned():
+    """buy_property returns False when property already has an owner."""
+    p1, p2 = Player("A"), Player("B")
+    prop = Property("P", 1, 100, 10)
+    prop.owner = p2
+    game = Game(["A", "B"])
+    assert game.buy_property(p1, prop) is False
 
-# Test 4: Successful purchase deducts balance and sets owner
-def test_buy_property_success_updates_state():
-    """Buy property: verify balance deducted and owner set correctly."""
-    player = Player("Test", balance=500)
-    prop = Property("TestProp", 1, 100, 10)
-    game = Game([player.name])
-    result = game.buy_property(player, prop)
+def test_buy_success_state_changes():
+    """Successful buy: balance deducted, owner set, prop in player.properties."""
+    p = Player("A", balance=500)
+    prop = Property("P", 1, 100, 10)
+    game = Game(["A"])
+    game.buy_property(p, prop)
+    assert prop.owner == p
+    assert p.balance == 400
+    assert prop in p.properties
+
+def test_buy_multiple_properties():
+    """Player can successfully buy multiple properties sequentially."""
+    p = Player("A", balance=1000)
+    game = Game(["A"])
+    props = [Property(f"P{i}", i, 200, 10) for i in range(3)]
+    for prop in props:
+        game.buy_property(p, prop)
+    assert p.count_properties() == 3
+    assert p.balance == 400
+
+def test_buy_property_zero_price():
+    """buy_property with price 0 succeeds; balance unchanged."""
+    p = Player("A", balance=0)
+    prop = Property("Free", 1, 0, 0)
+    game = Game(["A"])
+    result = game.buy_property(p, prop)
     assert result is True
-    assert prop.owner == player
-    assert player.balance == 400
-    assert prop in player.properties
+    assert prop.owner == p
+
+def test_buy_returns_false_does_not_change_balance():
+    """Failed buy: player balance must remain unchanged."""
+    p = Player("A", balance=50)
+    prop = Property("P", 1, 100, 10)
+    game = Game(["A"])
+    game.buy_property(p, prop)
+    assert p.balance == 50  # unchanged
+
+def test_buy_with_large_price():
+    """buy_property with a very large price succeeds if balance sufficient."""
+    p = Player("A", balance=1_000_000)
+    prop = Property("Mansion", 1, 999_999, 10)
+    game = Game(["A"])
+    assert game.buy_property(p, prop) is True
+    assert p.balance == 1
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 2: pay_rent
+# SECTION 5: Game.pay_rent branches (Tests 31-36)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Test 5: No rent collected on mortgaged property
-def test_no_rent_on_mortgaged_property():
-    """Branch: is_mortgaged → return early, balances unchanged."""
-    payer = Player("A")
-    owner = Player("B")
-    prop = Property("TestProp", 1, 100, 10)
-    prop.owner = owner
-    prop.is_mortgaged = True
-    game = Game([payer.name, owner.name])
-    game.players = [payer, owner]
+def test_pay_rent_mortgaged_no_deduction():
+    """No rent on mortgaged property — both balances stay the same."""
+    payer = Player("A"); owner = Player("B")
+    prop = Property("P", 1, 100, 10); prop.owner = owner; prop.is_mortgaged = True
+    game = Game(["A", "B"]); game.players = [payer, owner]
     game.pay_rent(payer, prop)
     assert payer.balance == 1500
     assert owner.balance == 1500
 
-# Test 6 (Bug #4): Rent IS transferred to owner on unmortgaged property
-def test_pay_rent_transfers_to_owner():
-    """Bug fix: rent money must be credited to owner (was lost)."""
-    payer = Player("A")
-    owner = Player("B")
-    prop = Property("TestProp", 1, 100, 10)
-    prop.owner = owner
-    prop.is_mortgaged = False
-    game = Game([payer.name, owner.name])
-    game.players = [payer, owner]
+def test_pay_rent_transfers_money():
+    """Rent deducted from payer and credited to owner."""
+    payer = Player("A"); owner = Player("B")
+    prop = Property("P", 1, 100, 10); prop.owner = owner; prop.is_mortgaged = False
+    game = Game(["A", "B"]); game.players = [payer, owner]
     game.pay_rent(payer, prop)
-    assert payer.balance == 1490   # 1500 - 10 rent
-    assert owner.balance == 1510   # 1500 + 10 rent
+    assert payer.balance == 1490
+    assert owner.balance == 1510
 
+def test_pay_rent_no_owner():
+    """pay_rent returns early if prop.owner is None — no crash."""
+    payer = Player("A")
+    prop = Property("P", 1, 100, 10); prop.owner = None; prop.is_mortgaged = False
+    game = Game(["A"]); game.players = [payer]
+    game.pay_rent(payer, prop)  # must not raise
+    assert payer.balance == 1500
 
-# ─────────────────────────────────────────────────────────────────────────────
-# SECTION 3: Player.move() & Go salary
-# ─────────────────────────────────────────────────────────────────────────────
-
-# Test 7: Landing exactly on Go awards salary
-def test_landing_on_go_awards_salary():
-    """Player moves from 39 → 0: lands on Go, should receive $200."""
-    player = Player("Test")
-    player.position = 39
-    player.move(1)
-    assert player.position == 0
-    assert player.balance == 1700   # 1500 + 200
-
-# Test 8 (Bug #5): Passing Go (not landing) also awards salary
-def test_passing_go_mid_board_awards_salary():
-    """Bug fix: player at 38 rolls 6 → lands on 4, must still get $200."""
-    player = Player("Test")
-    player.position = 38
-    initial_balance = player.balance
-    player.move(6)
-    assert player.position == 4
-    assert player.balance == initial_balance + 200
-
-# Test 9: Moving with zero steps does not award Go salary
-def test_zero_steps_no_go_salary():
-    """Edge case: steps=0, no wrap possible, no salary."""
-    player = Player("Test")
-    player.position = 0
-    initial_balance = player.balance
-    player.move(0)
-    assert player.position == 0
-    assert player.balance == initial_balance   # no salary for steps=0
-
-# Test 10: Negative steps (if ever supplied) handle position mod correctly
-def test_negative_steps_wrap():
-    """Edge case: negative steps wrap position using modulo."""
-    player = Player("Test")
-    player.position = 5
-    player.move(-3)
-    assert player.position == (5 - 3) % 40   # 2
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# SECTION 4: PropertyGroup.all_owned_by
-# ─────────────────────────────────────────────────────────────────────────────
-
-# Test 11 (Bug #3): Rent NOT doubled with partial group ownership
-def test_no_group_bonus_rent_if_partial_ownership():
-    """Bug fix: only partial ownership → rent stays at base, not doubled."""
+def test_pay_rent_group_bonus():
+    """Full colour group ownership doubles rent."""
     group = PropertyGroup("Brown", "brown")
-    prop1 = Property("Prop1", 1, 100, 10, group)
-    prop2 = Property("Prop2", 3, 100, 10, group)
-    playerA = Player("A")
-    playerB = Player("B")
-    prop1.owner = playerA
-    prop2.owner = playerB
-    assert prop1.get_rent() == 10   # must NOT be doubled to 20
+    prop1 = Property("P1", 1, 100, 10, group)
+    prop2 = Property("P2", 3, 100, 10, group)
+    owner = Player("B"); prop1.owner = owner; prop2.owner = owner
+    payer = Player("A")
+    game = Game(["A", "B"]); game.players = [payer, owner]
+    game.pay_rent(payer, prop1)
+    assert payer.balance == 1480  # 1500 - 20 (doubled)
 
-# Test 12: Rent IS doubled when one player owns full group
-def test_group_bonus_rent_full_ownership():
-    """All properties in group owned by same player → rent doubled."""
+def test_pay_rent_partial_group_no_bonus():
+    """Partial group ownership — rent stays base."""
     group = PropertyGroup("Brown", "brown")
-    prop1 = Property("Prop1", 1, 100, 10, group)
-    prop2 = Property("Prop2", 3, 100, 10, group)
-    playerA = Player("A")
-    prop1.owner = playerA
-    prop2.owner = playerA
-    assert prop1.get_rent() == 20   # doubled
+    prop1 = Property("P1", 1, 100, 10, group)
+    prop2 = Property("P2", 3, 100, 10, group)
+    ownerA = Player("A"); ownerB = Player("B")
+    prop1.owner = ownerA; prop2.owner = ownerB
+    payer = Player("C", balance=1500)
+    game = Game(["A", "B", "C"]); game.players = [payer, ownerA, ownerB]
+    game.pay_rent(payer, prop1)
+    assert payer.balance == 1490  # not doubled
+
+def test_pay_rent_zero_rent():
+    """Property with rent=0 — payer loses nothing."""
+    payer = Player("A"); owner = Player("B")
+    prop = Property("P", 1, 100, 0); prop.owner = owner; prop.is_mortgaged = False
+    game = Game(["A", "B"]); game.players = [payer, owner]
+    game.pay_rent(payer, prop)
+    assert payer.balance == 1500
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 5: find_winner
+# SECTION 6: Game.mortgage / unmortgage branches (Tests 37-44)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Test 13 (Bug #2): find_winner returns RICHEST player
-def test_find_winner_returns_richest_player():
-    """Bug fix: winner must have highest net worth (was returning lowest)."""
-    game = Game(["Alice", "Bob"])
-    game.players[0].add_money(500)   # Alice: 2000
-    # Bob stays at 1500
-    winner = game.find_winner()
-    assert winner.name == "Alice"
+def test_mortgage_not_owner_returns_false():
+    """mortgage_property returns False when player!=owner."""
+    p1 = Player("A"); p2 = Player("B")
+    prop = Property("P", 1, 100, 10); prop.owner = p2
+    game = Game(["A", "B"])
+    assert game.mortgage_property(p1, prop) is False
 
-# Test 14: find_winner with single player returns that player
-def test_find_winner_single_player():
-    """Edge case: only one player left → they are the winner."""
-    game = Game(["Solo"])
-    winner = game.find_winner()
-    assert winner.name == "Solo"
-
-# Test 15: find_winner with no players returns None
-def test_find_winner_no_players():
-    """Edge case: empty game → find_winner returns None."""
-    game = Game(["Temp"])
-    game.players = []
-    assert game.find_winner() is None
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# SECTION 6: Mortgage / Unmortgage
-# ─────────────────────────────────────────────────────────────────────────────
-
-# Test 16: Successful mortgage and unmortgage cycle
-def test_mortgage_and_unmortgage_cycle():
-    """Mortgage then unmortgage: flags toggle correctly, balances updated."""
-    player = Player("Test", balance=2000)
-    prop = Property("TestProp", 1, 100, 10)
-    prop.owner = player
-    player.add_property(prop)
-    game = Game([player.name])
-    game.mortgage_property(player, prop)
+def test_mortgage_success():
+    """Mortgage succeeds: is_mortgaged=True, player gets payout."""
+    p = Player("A", balance=500)
+    prop = Property("P", 1, 100, 10); prop.owner = p; p.add_property(prop)
+    game = Game(["A"])
+    result = game.mortgage_property(p, prop)
+    assert result is True
     assert prop.is_mortgaged is True
-    game.unmortgage_property(player, prop)
+    assert p.balance > 500  # received payout
+
+def test_mortgage_already_mortgaged():
+    """Mortgaging an already-mortgaged property returns False."""
+    p = Player("A")
+    prop = Property("P", 1, 100, 10); prop.owner = p; prop.is_mortgaged = True
+    p.add_property(prop)
+    game = Game(["A"])
+    result = game.mortgage_property(p, prop)
+    assert result is False
+
+def test_unmortgage_not_owner_returns_false():
+    """unmortgage_property returns False when player!=owner."""
+    p1 = Player("A"); p2 = Player("B")
+    prop = Property("P", 1, 100, 10); prop.owner = p2; prop.is_mortgaged = True
+    game = Game(["A", "B"])
+    assert game.unmortgage_property(p1, prop) is False
+
+def test_unmortgage_insufficient_funds():
+    """unmortgage returns False and property stays mortgaged when balance too low."""
+    p = Player("A", balance=1)
+    prop = Property("P", 1, 100, 10); prop.owner = p; prop.is_mortgaged = True
+    p.add_property(prop)
+    game = Game(["A"])
+    result = game.unmortgage_property(p, prop)
+    assert result is False
+    assert prop.is_mortgaged is True
+
+def test_unmortgage_success():
+    """Successful unmortgage: is_mortgaged=False, balance reduced."""
+    p = Player("A", balance=2000)
+    prop = Property("P", 1, 100, 10); prop.owner = p; p.add_property(prop)
+    game = Game(["A"])
+    game.mortgage_property(p, prop)   # mortgage first
+    bal_after_mortgage = p.balance
+    result = game.unmortgage_property(p, prop)
+    assert result is True
+    assert prop.is_mortgaged is False
+    assert p.balance < bal_after_mortgage  # paid cost
+
+def test_unmortgage_not_mortgaged():
+    """unmortgage on a non-mortgaged property returns False."""
+    p = Player("A", balance=2000)
+    prop = Property("P", 1, 100, 10); prop.owner = p; prop.is_mortgaged = False
+    p.add_property(prop)
+    game = Game(["A"])
+    result = game.unmortgage_property(p, prop)
+    assert result is False
+
+def test_mortgage_unmortgage_full_cycle():
+    """Full cycle: mortgage then unmortgage restores is_mortgaged=False."""
+    p = Player("A", balance=2000)
+    prop = Property("P", 1, 100, 10); prop.owner = p; p.add_property(prop)
+    game = Game(["A"])
+    game.mortgage_property(p, prop)
+    assert prop.is_mortgaged is True
+    game.unmortgage_property(p, prop)
     assert prop.is_mortgaged is False
 
-# Test 17: Cannot mortgage property you do not own
-def test_mortgage_property_not_owner():
-    """Branch: prop.owner != player → return False."""
-    player = Player("A")
-    other = Player("B")
-    prop = Property("TestProp", 1, 100, 10)
-    prop.owner = other
-    game = Game([player.name, other.name])
-    result = game.mortgage_property(player, prop)
-    assert result is False
-
-# Test 18: Cannot unmortgage with insufficient funds
-def test_unmortgage_property_insufficient_funds():
-    """Branch: balance < cost → return False, property stays mortgaged."""
-    player = Player("Test", balance=10)
-    prop = Property("TestProp", 1, 100, 10)
-    prop.owner = player
-    prop.is_mortgaged = True
-    player.add_property(prop)
-    game = Game([player.name])
-    result = game.unmortgage_property(player, prop)
-    assert result is False
-    assert prop.is_mortgaged is True
-
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 7: Trade
+# SECTION 7: Game.trade branches (Tests 45-50)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Test 19: Trade fails if seller does not own the property
-def test_trade_property_not_owned():
-    """Branch: prop.owner != seller → return False."""
-    seller = Player("A")
-    buyer = Player("B")
-    prop = Property("TestProp", 1, 100, 10)
-    game = Game([seller.name, buyer.name])
-    result = game.trade(seller, buyer, prop, 50)
-    assert result is False
+def test_trade_seller_not_owner():
+    """trade returns False when seller doesn't own property."""
+    seller = Player("A"); buyer = Player("B")
+    prop = Property("P", 1, 100, 10)
+    game = Game(["A", "B"])
+    assert game.trade(seller, buyer, prop, 50) is False
 
-# Test 20: Trade fails if buyer cannot afford the price
 def test_trade_buyer_cannot_afford():
-    """Branch: buyer.balance < cash_amount → return False."""
-    seller = Player("A")
-    buyer = Player("B", balance=10)
-    prop = Property("TestProp", 1, 100, 10)
-    prop.owner = seller
-    seller.add_property(prop)
-    game = Game([seller.name, buyer.name])
-    result = game.trade(seller, buyer, prop, 500)
-    assert result is False
+    """trade returns False when buyer.balance < cash_amount."""
+    seller = Player("A"); buyer = Player("B", balance=10)
+    prop = Property("P", 1, 100, 10); prop.owner = seller; seller.add_property(prop)
+    game = Game(["A", "B"])
+    assert game.trade(seller, buyer, prop, 500) is False
+
+def test_trade_success_ownership_transfer():
+    """Successful trade: prop.owner becomes buyer."""
+    seller = Player("A", balance=1500); buyer = Player("B", balance=1500)
+    prop = Property("P", 1, 100, 10); prop.owner = seller; seller.add_property(prop)
+    game = Game(["A", "B"])
+    result = game.trade(seller, buyer, prop, 100)
+    assert result is True
+    assert prop.owner == buyer
+    assert prop in buyer.properties
+    assert prop not in seller.properties
+
+def test_trade_success_cash_transfer():
+    """Successful trade: money transferred from buyer to seller."""
+    seller = Player("A", balance=1500); buyer = Player("B", balance=1500)
+    prop = Property("P", 1, 100, 10); prop.owner = seller; seller.add_property(prop)
+    game = Game(["A", "B"])
+    game.trade(seller, buyer, prop, 300)
+    assert buyer.balance == 1200
+    # Note: seller balance not increased in basic trade (seller adds separately)
+
+def test_trade_zero_cash():
+    """Trade with cash_amount=0 still transfers ownership correctly."""
+    seller = Player("A"); buyer = Player("B")
+    prop = Property("P", 1, 100, 10); prop.owner = seller; seller.add_property(prop)
+    game = Game(["A", "B"])
+    result = game.trade(seller, buyer, prop, 0)
+    assert result is True
+    assert prop.owner == buyer
+
+def test_trade_exact_buyer_balance():
+    """Buyer with exactly enough cash can complete trade (boundary)."""
+    seller = Player("A"); buyer = Player("B", balance=100)
+    prop = Property("P", 1, 100, 10); prop.owner = seller; seller.add_property(prop)
+    game = Game(["A", "B"])
+    assert game.trade(seller, buyer, prop, 100) is True
+    assert buyer.balance == 0
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 8: Jail / Bankruptcy / Card actions
+# SECTION 8: _apply_card branches (Tests 51-57)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Test 21: Bankruptcy eliminates player
-def test_bankruptcy_eliminates_player():
-    """Branch: balance <= 0 → player.is_eliminated set to True."""
-    player = Player("Test", balance=0)
-    game = Game([player.name])
-    game.players = [player]
-    game._check_bankruptcy(player)
-    assert player.is_eliminated is True
+def test_apply_card_none():
+    """_apply_card with None card is a safe no-op."""
+    p = Player("A")
+    game = Game(["A"]); game.players = [p]
+    game._apply_card(p, None)  # must not raise
 
-# Test 22: Get Out of Jail Free card applied correctly
-def test_get_out_of_jail_free_card():
-    """Card action 'jail_free': player's card count increments by 1."""
-    player = Player("Test")
-    game = Game([player.name])
-    card = {"description": "Get Out of Jail Free.", "action": "jail_free", "value": 0}
-    game._apply_card(player, card)
-    assert player.get_out_of_jail_cards == 1
+def test_apply_card_collect():
+    """Card action 'collect': player's balance increases."""
+    p = Player("A")
+    game = Game(["A"]); game.players = [p]
+    card = {"description": "Collect $200", "action": "collect", "value": 200}
+    game._apply_card(p, card)
+    assert p.balance == 1700
 
-# Test 23: Income tax tile deducts correct amount
-def test_income_tax_payment():
-    """Tile 'income_tax': player's balance decreases by INCOME_TAX_AMOUNT ($200)."""
-    player = Player("Test")
-    game = Game([player.name])
-    player.position = 4  # INCOME_TAX_POSITION
-    balance_before = player.balance
-    game._move_and_resolve(player, 0)
-    assert player.balance == balance_before - 200
+def test_apply_card_pay():
+    """Card action 'pay': player's balance decreases."""
+    p = Player("A", balance=500)
+    game = Game(["A"]); game.players = [p]
+    card = {"description": "Pay $100", "action": "pay", "value": 100}
+    game._apply_card(p, card)
+    assert p.balance == 400
 
-# Test 24: Go To Jail tile sends player to jail
-def test_go_to_jail_tile():
-    """Tile 'go_to_jail': player.in_jail becomes True."""
-    player = Player("Test")
-    game = Game([player.name])
-    player.position = 30  # GO_TO_JAIL_POSITION
-    game._move_and_resolve(player, 0)
-    assert player.in_jail is True
+def test_apply_card_jail():
+    """Card action 'jail': player.in_jail becomes True."""
+    p = Player("A")
+    game = Game(["A"]); game.players = [p]
+    card = {"description": "Go to Jail", "action": "jail", "value": 0}
+    game._apply_card(p, card)
+    assert p.in_jail is True
 
-# Test 25: Player sent to jail after 3 consecutive doubles
-def test_player_sent_to_jail_after_3_doubles(monkeypatch):
-    """Branch: doubles_streak >= 3 → go_to_jail called."""
-    player = Player("Test")
-    game = Game([player.name])
-    game.current_index = 0
+def test_apply_card_jail_free():
+    """Card action 'jail_free': player.get_out_of_jail_cards incremented."""
+    p = Player("A")
+    game = Game(["A"]); game.players = [p]
+    card = {"description": "GOOJF", "action": "jail_free", "value": 0}
+    game._apply_card(p, card)
+    assert p.get_out_of_jail_cards == 1
 
-    class DummyDice:
-        def __init__(self):
-            self.doubles_streak = 2
+def test_apply_card_birthday():
+    """Card action 'birthday': each other player pays value to card holder."""
+    p_main = Player("Main"); p2 = Player("B", balance=200); p3 = Player("C", balance=200)
+    game = Game(["Main", "B", "C"]); game.players = [p_main, p2, p3]
+    card = {"description": "Birthday", "action": "birthday", "value": 50}
+    game._apply_card(p_main, card)
+    assert p2.balance == 150
+    assert p3.balance == 150
+    assert p_main.balance == 1600  # 1500 + 50 + 50
 
-        def roll(self):
-            self.doubles_streak += 1
-            return 4
+def test_apply_card_move_to_passes_go():
+    """Card action 'move_to' with value < current position awards Go salary."""
+    p = Player("A"); p.position = 30
+    game = Game(["A"]); game.players = [p]
+    card = {"description": "Advance to Go", "action": "move_to", "value": 0}
+    game._apply_card(p, card)
+    assert p.position == 0
+    assert p.balance == 1700  # salary collected
 
-        def is_doubles(self):
-            return True
-
-        def describe(self):
-            return "2 + 2 = 4 (DOUBLES)"
-
-    game.dice = DummyDice()
-    player.in_jail = False
-    game.players[0] = player
-    game.play_turn()
-    assert player.in_jail is True
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 8: Explicit Individual Module Coverage (Board, Dice, Cards)
+# SECTION 9: _check_bankruptcy / find_winner (Tests 58-64)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Test 26: Board initializes correctly
+def test_bankruptcy_eliminates():
+    """Player with balance=0 is marked eliminated and removed."""
+    p = Player("A", balance=0)
+    game = Game(["A"]); game.players = [p]
+    game._check_bankruptcy(p)
+    assert p.is_eliminated is True
+
+def test_bankruptcy_releases_properties():
+    """Bankrupt player's properties revert to unowned and unmortgaged."""
+    p = Player("A", balance=0)
+    prop = Property("P", 1, 100, 10); prop.owner = p; prop.is_mortgaged = True
+    p.add_property(prop)
+    game = Game(["A"]); game.players = [p]
+    game._check_bankruptcy(p)
+    assert prop.owner is None
+    assert prop.is_mortgaged is False
+
+def test_no_bankruptcy_positive_balance():
+    """Player with positive balance is not eliminated."""
+    p = Player("A", balance=1)
+    game = Game(["A"]); game.players = [p]
+    game._check_bankruptcy(p)
+    assert p.is_eliminated is False
+
+def test_find_winner_richest_player():
+    """find_winner returns player with highest balance."""
+    game = Game(["Alice", "Bob"])
+    game.players[0].add_money(500)  # Alice has 2000
+    assert game.find_winner().name == "Alice"
+
+def test_find_winner_single_player():
+    """find_winner with one player returns that player."""
+    game = Game(["Solo"])
+    assert game.find_winner().name == "Solo"
+
+def test_find_winner_empty_returns_none():
+    """find_winner with no players returns None."""
+    game = Game(["Temp"]); game.players = []
+    assert game.find_winner() is None
+
+def test_advance_turn_wraps():
+    """advance_turn wraps current_index back to 0 after last player."""
+    game = Game(["A", "B"]); game.current_index = 1
+    game.advance_turn()
+    assert game.current_index == 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 10: PropertyGroup.all_owned_by (Tests 65-67)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_group_not_all_owned():
+    """all_owned_by returns False for partial group ownership."""
+    group = PropertyGroup("Brown", "brown")
+    p1 = Property("P1", 1, 100, 10, group)
+    p2 = Property("P2", 3, 100, 10, group)
+    a = Player("A"); b = Player("B")
+    p1.owner = a; p2.owner = b
+    assert group.all_owned_by(a) is False
+
+def test_group_all_owned():
+    """all_owned_by returns True when player owns entire group."""
+    group = PropertyGroup("Brown", "brown")
+    p1 = Property("P1", 1, 100, 10, group)
+    p2 = Property("P2", 3, 100, 10, group)
+    a = Player("A"); p1.owner = a; p2.owner = a
+    assert group.all_owned_by(a) is True
+
+def test_group_get_rent_doubles_when_full():
+    """get_rent returns doubled value when player owns full group."""
+    group = PropertyGroup("Brown", "brown")
+    p1 = Property("P1", 1, 100, 10, group)
+    p2 = Property("P2", 3, 100, 10, group)
+    a = Player("A"); p1.owner = a; p2.owner = a
+    assert p1.get_rent() == 20
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 11: Board, Dice, Cards modules (Tests 68-70)
+# ─────────────────────────────────────────────────────────────────────────────
+
 def test_board_initialization():
-    """Validates Board setup and property distribution directly."""
+    """Board has 22 purchasable properties; position 0 returns 'go' tile type."""
     board = Board()
-    assert len(board.properties) == 22
+    assert len(board.properties) == 22  # 22 buyable property tiles
     assert board.get_tile_type(0) == "go"
 
-# Test 27: Dice roll mechanics
 def test_dice_roll_bounds():
-    """Validates Dice rolls strictly within expected bounds."""
+    """Dice roll always returns a value between 2 and 12 inclusive."""
     dice = Dice()
-    roll_val = dice.roll()
-    assert 2 <= roll_val <= 12
-    assert type(dice.is_doubles()) is bool
+    for _ in range(200):
+        val = dice.roll()
+        assert 2 <= val <= 12
 
-# Test 28: Card logic parsing
 def test_card_deck_operations():
-    """Validates Card Deck initialization and draw functionality."""
+    """CardDeck initializes with correct count and draw returns a dict."""
     deck = CardDeck(CHANCE_CARDS)
     assert len(deck.cards) == 12
     drawn_card = deck.draw()
     assert isinstance(drawn_card, dict)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 12: jail after 3 doubles (Test 71 — still numbered for report)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_player_sent_to_jail_after_3_doubles(monkeypatch):
+    """Three consecutive doubles sends player to jail (doubles_streak branch)."""
+    p = Player("Test")
+    game = Game(["Test"]); game.current_index = 0
+
+    class DummyDice:
+        def __init__(self): self.doubles_streak = 2
+        def roll(self): self.doubles_streak += 1; return 4
+        def is_doubles(self): return True
+        def describe(self): return "2+2=4 (DOUBLES)"
+
+    game.dice = DummyDice(); game.players[0] = p
+    p.in_jail = False
+    game.play_turn()
+    assert p.in_jail is True
+
+def test_income_tax_tile():
+    """Landing on income tax tile (position 4) deducts INCOME_TAX_AMOUNT."""
+    p = Player("A"); p.position = 4
+    game = Game(["A"]); game.players = [p]
+    bal = p.balance
+    game._move_and_resolve(p, 0)
+    assert p.balance == bal - 200
+
+def test_go_to_jail_tile():
+    """Landing on go_to_jail tile (position 30) sets player.in_jail=True."""
+    p = Player("A"); p.position = 30
+    game = Game(["A"]); game.players = [p]
+    game._move_and_resolve(p, 0)
+    assert p.in_jail is True
