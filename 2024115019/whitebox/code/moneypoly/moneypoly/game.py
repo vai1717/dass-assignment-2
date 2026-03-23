@@ -3,7 +3,7 @@
 """
 Game module for MoneyPoly: manages the game session, player turns, and game logic.
 """
-from moneypoly import ui
+import ui
 from config import (
     JAIL_FINE,
     AUCTION_MIN_INCREMENT,
