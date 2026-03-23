@@ -1,10 +1,9 @@
-# pylint: disable=too-many-instance-attributes,too-many-branches,wrong-import-order
 
 """
 Game module for MoneyPoly: manages the game session, player turns, and game logic.
 """
 import ui
-from config import (
+from .config import (
     JAIL_FINE,
     AUCTION_MIN_INCREMENT,
     INCOME_TAX_AMOUNT,
@@ -12,11 +11,11 @@ from config import (
     MAX_TURNS,
     GO_SALARY,
 )
-from player import Player
-from board import Board
-from bank import Bank
-from dice import Dice
-from cards import CardDeck, CHANCE_CARDS, COMMUNITY_CHEST_CARDS
+from .player import Player
+from .board import Board
+from .bank import Bank
+from .dice import Dice
+from .cards import CardDeck, CHANCE_CARDS, COMMUNITY_CHEST_CARDS
 
 
 class Game:

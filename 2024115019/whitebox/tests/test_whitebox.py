@@ -10,15 +10,16 @@ import os
 import pytest
 
 # Ensure the moneypoly package in code/ is importable
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "code", "moneypoly"))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "code", "moneypoly", "moneypoly"))
 
-from player import Player
-from property import Property, PropertyGroup
-from game import Game
-from bank import Bank
-from board import Board
-from dice import Dice
-from cards import CardDeck, CHANCE_CARDS, COMMUNITY_CHEST_CARDS
+from moneypoly.player import Player
+from moneypoly.property import Property, PropertyGroup
+from moneypoly.game import Game
+from moneypoly.bank import Bank
+from moneypoly.board import Board
+from moneypoly.dice import Dice
+from moneypoly.cards import CardDeck, CHANCE_CARDS, COMMUNITY_CHEST_CARDS
 
 
 # ─────────────────────────────────────────────────────────────────────────────

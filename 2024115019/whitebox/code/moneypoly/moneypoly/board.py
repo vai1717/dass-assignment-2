@@ -3,8 +3,8 @@
 Board module for MoneyPoly: defines the board layout, special tiles, and property
 lookup functions.
 """
-from property import Property, PropertyGroup
-from config import (
+from .property import Property, PropertyGroup
+from .config import (
     JAIL_POSITION,
     GO_TO_JAIL_POSITION,
     FREE_PARKING_POSITION,

@@ -3,7 +3,7 @@
 """
 Bank module for MoneyPoly: manages bank funds, loans, and payouts.
 """
-from config import BANK_STARTING_FUNDS
+from .config import BANK_STARTING_FUNDS
 
 
 class Bank:

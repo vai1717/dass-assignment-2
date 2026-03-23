@@ -1,10 +1,9 @@
-# pylint: disable=too-many-instance-attributes
 
 # Player module for MoneyPoly: defines the Player class and player logic.
 """
 Player module for MoneyPoly: defines the Player class and player logic.
 """
-from config import STARTING_BALANCE, BOARD_SIZE, GO_SALARY, JAIL_POSITION
+from .config import STARTING_BALANCE, BOARD_SIZE, GO_SALARY, JAIL_POSITION
 
 
 class Player:
