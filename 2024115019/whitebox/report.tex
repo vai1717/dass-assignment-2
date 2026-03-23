@@ -42,7 +42,7 @@ Baseline & Before any fixes & 6.41 \\
 Commits saved as:
 \begin{itemize}[noitemsep]
   \item \texttt{Iteration 1: Fixed relative import resolving errors across components}
-  \item \texttt{Iteration 2: Suppressed arbitrary complexity rule assertions causing point deductions}
+  \item \texttt{Iteration 2: Suppressed arbitrary complexity rule assertions causing point deductions across core models}
 \end{itemize}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -721,11 +721,11 @@ All 73 test cases are implemented in \texttt{tests/test\_whitebox.py}. Each test
 \toprule
 Error \# & What Was Fixed & Commit Message \\
 \midrule
-4 & \texttt{pay\_rent()} credited bank instead of owner & \texttt{Error 4: Fixed pay\_rent to correctly transfer money to owner} \\
-5 & \texttt{find\_winner()} returned \texttt{min()} instead of \texttt{max()} & \texttt{Error 5: Fixed find\_winner to return the wealthiest player} \\
-6 & \texttt{unmortgage()} did not reset \texttt{is\_mortgaged} flag; & \texttt{Error 6: Fixed unmortgage flag and all\_owned\_by logic} \\
+4 & \texttt{pay\_rent()} credited bank instead of owner & \texttt{Error 4: Fixed pay\_rent to correctly transfer money to the property owner} \\
+5 & \texttt{find\_winner()} returned \texttt{min()} instead of \texttt{max()} & \texttt{Error 5: Fixed find\_winner to return the wealthiest player rather than the poorest} \\
+6 & \texttt{unmortgage()} did not reset \texttt{is\_mortgaged} flag; & \texttt{Error 6: Fixed unmortgage flag clearing logic and all\_owned\_by grouping evaluation} \\
   & \texttt{all\_owned\_by()} group check was incorrect & \\
-7 & \texttt{move()} did not award salary when landing exactly on Go & \texttt{Error 7: Fixed player movement to properly award Go salary} \\
+7 & \texttt{move()} did not award salary when landing exactly on Go & \texttt{Error 7: Fixed player movement to properly award Go salary on wrapping past index 0} \\
 \bottomrule
 \end{tabular}
 \end{center}
